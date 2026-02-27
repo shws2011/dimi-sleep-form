@@ -13,7 +13,7 @@
             giteeOwner: 'shws2011',
             giteeRepo: 'dimi',
             giteePath: 'memory/fitness/sleep_inputs',
-            giteeToken: 'YOUR_GITEE_ACCESS_TOKEN', // 需要替换为真实令牌
+            giteeToken: '', // 将在首次使用时配置并保存到localStorage
             apiEndpoint: 'https://gitee.com/api/v5/repos/shws2011/dimi/contents/memory/fitness/sleep_inputs',
             environment: 'github-pages',
             enableLocalStorage: true,
@@ -429,6 +429,41 @@
             📅 今天日期：<span id="current-date"></span>
         </div>
         
+        <!-- Gitee令牌配置 -->
+        <div class="form-container config-panel" id="config-panel">
+            <div class="section-title">
+                <i>⚙️</i> Gitee API配置
+            </div>
+            
+            <div class="config-warning" style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                <p style="margin: 0 0 10px 0; color: #856404; font-weight: 600;">⚠️ 需要配置Gitee令牌才能提交数据</p>
+                <p style="margin: 0; color: #856404; font-size: 14px;">为了安全起见，GitHub不允许在代码中存储API令牌。请在此处输入您的Gitee个人访问令牌：</p>
+            </div>
+            
+            <div class="form-group required">
+                <label for="gitee-token">Gitee个人访问令牌</label>
+                <input type="password" id="gitee-token" placeholder="输入您的Gitee令牌 (32位十六进制字符)" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <div class="help-text" style="font-size: 12px; color: #6c757d; margin-top: 5px;">
+                    您的Gitee令牌: <code>ed4425ff9eae674d02248852bcb8fd63</code> (从您的配置中获取)
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="save-token-local">保存到本地浏览器</label>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="save-token-local" checked>
+                    <span style="font-size: 14px; color: #6c757d;">勾选后将令牌保存到浏览器本地存储，下次无需重新输入</span>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" id="save-config-btn" class="btn btn-primary" style="flex: 1;">保存配置</button>
+                <button type="button" id="test-config-btn" class="btn btn-secondary" style="flex: 1;">测试连接</button>
+            </div>
+            
+            <div id="config-status" style="margin-top: 15px; padding: 10px; border-radius: 6px; display: none;"></div>
+        </div>
+        
         <!-- 表单 -->
         <div class="form-container">
             <form id="sleep-data-form">
@@ -662,7 +697,154 @@
                 return false;
             }
         }
-        
+
+        // Gitee令牌配置管理
+        function loadGiteeToken() {
+            const savedToken = localStorage.getItem('dimi_gitee_token');
+            if (savedToken && savedToken.trim() !== '') {
+                window.DIMI_CONFIG.giteeToken = savedToken;
+                document.getElementById('gitee-token').value = savedToken;
+                console.log('从本地存储加载Gitee令牌');
+                return true;
+            }
+            return false;
+        }
+
+        function saveGiteeToken(token, saveToLocal = true) {
+            if (!token || token.trim() === '') {
+                return false;
+            }
+            
+            // 验证令牌格式（32位十六进制字符）
+            const tokenRegex = /^[a-fA-F0-9]{32}$/;
+            if (!tokenRegex.test(token)) {
+                return { success: false, message: '令牌格式不正确，应为32位十六进制字符' };
+            }
+            
+            window.DIMI_CONFIG.giteeToken = token;
+            
+            if (saveToLocal) {
+                localStorage.setItem('dimi_gitee_token', token);
+                console.log('Gitee令牌已保存到本地存储');
+            }
+            
+            return { success: true, message: '令牌配置成功' };
+        }
+
+        async function testGiteeConnection(token) {
+            if (!token || token.trim() === '') {
+                return { success: false, message: '请先输入Gitee令牌' };
+            }
+            
+            const testData = {
+                content: btoa(JSON.stringify({ test: true, timestamp: new Date().toISOString() })),
+                message: 'DIMI API连接测试',
+                branch: 'master'
+            };
+            
+            try {
+                const response = await fetch(`https://gitee.com/api/v5/repos/${window.DIMI_CONFIG.giteeOwner}/${window.DIMI_CONFIG.giteeRepo}/contents/memory/fitness/sleep_inputs/test_connection.json?access_token=${token}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                if (response.ok) {
+                    return { success: true, message: 'Gitee API连接测试成功' };
+                } else {
+                    const errorText = await response.text();
+                    return { success: false, message: `API连接失败: ${response.status} ${errorText.substring(0, 100)}` };
+                }
+            } catch (error) {
+                return { success: false, message: `网络错误: ${error.message}` };
+            }
+        }
+
+        function setupConfigPanel() {
+            const saveBtn = document.getElementById('save-config-btn');
+            const testBtn = document.getElementById('test-config-btn');
+            const tokenInput = document.getElementById('gitee-token');
+            const saveLocalCheckbox = document.getElementById('save-token-local');
+            const configStatus = document.getElementById('config-status');
+            
+            if (!saveBtn || !testBtn) return;
+            
+            // 加载已保存的令牌
+            loadGiteeToken();
+            
+            saveBtn.addEventListener('click', async () => {
+                const token = tokenInput.value.trim();
+                const saveToLocal = saveLocalCheckbox.checked;
+                
+                const result = saveGiteeToken(token, saveToLocal);
+                
+                configStatus.style.display = 'block';
+                if (result.success) {
+                    configStatus.style.backgroundColor = '#d4edda';
+                    configStatus.style.border = '1px solid #c3e6cb';
+                    configStatus.style.color = '#155724';
+                    configStatus.innerHTML = `✅ ${result.message}`;
+                    
+                    // 自动测试连接
+                    setTimeout(async () => {
+                        const testResult = await testGiteeConnection(token);
+                        configStatus.innerHTML += `<br>${testResult.success ? '✅' : '❌'} ${testResult.message}`;
+                    }, 500);
+                } else {
+                    configStatus.style.backgroundColor = '#f8d7da';
+                    configStatus.style.border = '1px solid #f5c6cb';
+                    configStatus.style.color = '#721c24';
+                    configStatus.innerHTML = `❌ ${result.message}`;
+                }
+            });
+            
+            testBtn.addEventListener('click', async () => {
+                const token = tokenInput.value.trim();
+                if (!token) {
+                    configStatus.style.display = 'block';
+                    configStatus.style.backgroundColor = '#f8d7da';
+                    configStatus.style.border = '1px solid #f5c6cb';
+                    configStatus.style.color = '#721c24';
+                    configStatus.innerHTML = '❌ 请先输入Gitee令牌';
+                    return;
+                }
+                
+                configStatus.style.display = 'block';
+                configStatus.style.backgroundColor = '#fff3cd';
+                configStatus.style.border = '1px solid #ffeaa7';
+                configStatus.style.color = '#856404';
+                configStatus.innerHTML = '⏳ 正在测试Gitee API连接...';
+                
+                const result = await testGiteeConnection(token);
+                
+                if (result.success) {
+                    configStatus.style.backgroundColor = '#d4edda';
+                    configStatus.style.border = '1px solid #c3e6cb';
+                    configStatus.style.color = '#155724';
+                    configStatus.innerHTML = `✅ ${result.message}`;
+                } else {
+                    configStatus.style.backgroundColor = '#f8d7da';
+                    configStatus.style.border = '1px solid #f5c6cb';
+                    configStatus.style.color = '#721c24';
+                    configStatus.innerHTML = `❌ ${result.message}`;
+                }
+            });
+        }
+
+        // 页面初始化时设置配置面板
+        document.addEventListener('DOMContentLoaded', function() {
+            setupConfigPanel();
+            
+            // 检查是否已配置令牌
+            if (window.DIMI_CONFIG.giteeToken && window.DIMI_CONFIG.giteeToken.trim() !== '') {
+                console.log('Gitee令牌已配置');
+            } else {
+                console.log('Gitee令牌未配置，请在上方配置面板中输入');
+            }
+        });
+
         // 表单提交处理
         async function handleFormSubmit(e) {
             e.preventDefault();
@@ -675,8 +857,17 @@
             
             // 检查Gitee令牌配置
             const token = window.DIMI_CONFIG.giteeToken;
-            if (token === 'YOUR_GITEE_ACCESS_TOKEN') {
-                showResult('error', '请先配置Gitee访问令牌（见页面顶部说明）');
+            if (!token || token.trim() === '') {
+                showResult('error', '请先在上方配置面板中输入Gitee访问令牌<br><small>您的Gitee令牌: <code>ed4425ff9eae674d02248852bcb8fd63</code></small>');
+                
+                // 滚动到配置面板
+                document.getElementById('config-panel').scrollIntoView({ behavior: 'smooth' });
+                // 高亮显示令牌输入框
+                const tokenInput = document.getElementById('gitee-token');
+                tokenInput.focus();
+                tokenInput.style.border = '2px solid #e74c3c';
+                setTimeout(() => { tokenInput.style.border = ''; }, 2000);
+                
                 return;
             }
             
