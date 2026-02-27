@@ -738,8 +738,18 @@
             
             console.log('测试Gitee连接，使用令牌:', token.substring(0, 8) + '...');
             
+            // 生成唯一文件名避免冲突
+            const timestamp = new Date().getTime();
+            const testFilename = `test_connection_${timestamp}.json`;
+            const testFilePath = `memory/fitness/sleep_inputs/${testFilename}`;
+            
             // 测试数据
-            const testJson = JSON.stringify({ test: true, timestamp: new Date().toISOString(), purpose: 'DIMI API连接测试' });
+            const testJson = JSON.stringify({ 
+                test: true, 
+                timestamp: new Date().toISOString(), 
+                purpose: 'DIMI API连接测试',
+                uniqueId: timestamp
+            });
             const contentBase64 = btoa(unescape(encodeURIComponent(testJson)));
             
             // 已知Gitee仓库使用main分支（诊断脚本确认）
@@ -748,11 +758,11 @@
             try {
                 const testData = {
                     content: contentBase64,
-                    message: 'DIMI API连接测试',
+                    message: 'DIMI API连接测试 - 唯一文件避免冲突',
                     branch: branch
                 };
                 
-                const createFileUrl = `https://gitee.com/api/v5/repos/${window.DIMI_CONFIG.giteeOwner}/${window.DIMI_CONFIG.giteeRepo}/contents/memory/fitness/sleep_inputs/test_connection.json?access_token=${token}`;
+                const createFileUrl = `https://gitee.com/api/v5/repos/${window.DIMI_CONFIG.giteeOwner}/${window.DIMI_CONFIG.giteeRepo}/contents/${testFilePath}?access_token=${token}`;
                 console.log('API请求URL:', createFileUrl.substring(0, 100) + '...');
                 console.log('请求数据:', JSON.stringify(testData));
                 
@@ -769,6 +779,10 @@
                 if (response.ok) {
                     const result = await response.json();
                     console.log('API响应成功:', result);
+                    
+                    // 可选：清理测试文件（避免积累）
+                    // 但为了简化，暂时保留
+                    
                     return { success: true, message: `Gitee API连接测试成功 (分支: ${branch})` };
                 } else {
                     const errorText = await response.text();
