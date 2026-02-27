@@ -736,59 +736,62 @@
                 return { success: false, message: '请先输入Gitee令牌' };
             }
             
+            console.log('测试Gitee连接，使用令牌:', token.substring(0, 8) + '...');
+            
             // 测试数据
             const testJson = JSON.stringify({ test: true, timestamp: new Date().toISOString(), purpose: 'DIMI API连接测试' });
             const contentBase64 = btoa(unescape(encodeURIComponent(testJson)));
             
-            // 尝试两种可能的分支：master 和 main
-            const branchesToTry = ['master', 'main'];
+            // 已知Gitee仓库使用main分支（诊断脚本确认）
+            const branch = 'main';
             
-            for (const branch of branchesToTry) {
-                try {
-                    const testData = {
-                        content: contentBase64,
-                        message: 'DIMI API连接测试',
-                        branch: branch
-                    };
+            try {
+                const testData = {
+                    content: contentBase64,
+                    message: 'DIMI API连接测试',
+                    branch: branch
+                };
+                
+                const createFileUrl = `https://gitee.com/api/v5/repos/${window.DIMI_CONFIG.giteeOwner}/${window.DIMI_CONFIG.giteeRepo}/contents/memory/fitness/sleep_inputs/test_connection.json?access_token=${token}`;
+                console.log('API请求URL:', createFileUrl.substring(0, 100) + '...');
+                console.log('请求数据:', JSON.stringify(testData));
+                
+                const response = await fetch(createFileUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                console.log('响应状态:', response.status);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('API响应成功:', result);
+                    return { success: true, message: `Gitee API连接测试成功 (分支: ${branch})` };
+                } else {
+                    const errorText = await response.text();
+                    console.error('API错误响应:', errorText);
                     
-                    const createFileUrl = `https://gitee.com/api/v5/repos/${window.DIMI_CONFIG.giteeOwner}/${window.DIMI_CONFIG.giteeRepo}/contents/memory/fitness/sleep_inputs/test_connection.json?access_token=${token}`;
-                    const response = await fetch(createFileUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(testData)
-                    });
+                    let errorMsg = `API连接失败: ${response.status}`;
                     
-                    if (response.ok) {
-                        return { success: true, message: `Gitee API连接测试成功 (分支: ${branch})` };
-                    } else if (branch === branchesToTry[branchesToTry.length - 1]) {
-                        // 如果是最后一个分支，返回错误
-                        const errorText = await response.text();
-                        let errorMsg = `API连接失败: ${response.status}`;
-                        
-                        try {
-                            const errorJson = JSON.parse(errorText);
-                            if (errorJson.message) {
-                                errorMsg = `API错误: ${errorJson.message}`;
-                            }
-                        } catch (e) {
-                            // 保持原错误信息
-                            errorMsg += ` ${errorText.substring(0, 100)}`;
+                    try {
+                        const errorJson = JSON.parse(errorText);
+                        if (errorJson.message) {
+                            errorMsg = `API错误: ${errorJson.message}`;
                         }
-                        
-                        return { success: false, message: errorMsg };
+                    } catch (e) {
+                        // 保持原错误信息
+                        errorMsg += ` ${errorText.substring(0, 100)}`;
                     }
-                    // 如果这个分支失败，继续尝试下一个分支
-                } catch (error) {
-                    if (branch === branchesToTry[branchesToTry.length - 1]) {
-                        return { success: false, message: `网络错误: ${error.message}` };
-                    }
-                    // 继续尝试下一个分支
+                    
+                    return { success: false, message: errorMsg };
                 }
+            } catch (error) {
+                console.error('网络错误:', error);
+                return { success: false, message: `网络错误: ${error.message}` };
             }
-            
-            return { success: false, message: '所有分支尝试均失败' };
         }
 
         function setupConfigPanel() {
@@ -926,7 +929,7 @@
                     body: JSON.stringify({
                         content: contentBase64,
                         message: `DIMI睡眠数据提交 ${new Date().toLocaleString()}`,
-                        branch: 'master'
+                        branch: 'main'
                     })
                 });
                 
