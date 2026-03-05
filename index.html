@@ -2,1085 +2,571 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <title>🌙 DIMI 晨间睡眠数据收集 (GitHub Pages版本)</title>
-    
-    <!-- 后端API配置 -->
-    <script>
-        // Gitee API端点配置
-        // 请替换 YOUR_GITEE_ACCESS_TOKEN 为您的实际令牌
-        window.DIMI_CONFIG = {
-            giteeOwner: 'shws2011',
-            giteeRepo: 'dimi',
-            giteePath: 'memory/fitness/sleep_inputs',
-            giteeToken: '', // 将在首次使用时配置并保存到localStorage
-            apiEndpoint: 'https://gitee.com/api/v5/repos/shws2011/dimi/contents/memory/fitness/sleep_inputs',
-            environment: 'github-pages',
-            enableLocalStorage: true,
-            autoSaveInterval: 30000
-        };
-    </script>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DIMI 睡眠数据表单 v2.0 - 新格式</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root {
-            --primary-color: #3498db;
-            --success-color: #2ecc71;
-            --warning-color: #f39c12;
-            --danger-color: #e74c3c;
-            --light-color: #f8f9fa;
-            --dark-color: #2c3e50;
-            --border-radius: 12px;
-            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            --transition: all 0.3s ease;
-        }
-        
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
         }
-        
+
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
-            padding-bottom: 80px;
-        }
-        
-        .app-container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        
-        .header-card {
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            padding: 25px;
-            margin-bottom: 20px;
-            text-align: center;
-            animation: slideDown 0.5s ease;
-        }
-        
-        .header-card h1 {
-            color: var(--dark-color);
-            font-size: 24px;
-            margin-bottom: 8px;
             display: flex;
-            align-items: center;
             justify-content: center;
-            gap: 10px;
+            align-items: center;
         }
-        
-        .header-card .subtitle {
-            color: #7f8c8d;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-        
-        .date-card {
+
+        .container {
+            max-width: 900px;
+            width: 100%;
             background: rgba(255, 255, 255, 0.95);
-            border-radius: var(--border-radius);
-            padding: 15px;
-            margin-bottom: 20px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header {
+            background: linear-gradient(90deg, #4f6df5, #3a56d5);
+            color: white;
+            padding: 30px;
             text-align: center;
-            font-size: 16px;
-            color: var(--dark-color);
-            font-weight: 600;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            border-left: 4px solid var(--primary-color);
         }
-        
-        .form-container {
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
             padding: 25px;
-            margin-bottom: 20px;
+            background: #f8f9ff;
+            border-radius: 15px;
+            border-left: 5px solid #4f6df5;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
         }
-        
-        .section-title {
-            font-size: 18px;
-            color: var(--dark-color);
-            margin: 0 0 20px 0;
-            padding-bottom: 10px;
-            border-bottom: 2px solid var(--primary-color);
+
+        .form-section h2 {
+            color: #3a56d5;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
             display: flex;
             align-items: center;
             gap: 10px;
         }
-        
-        .section-title i {
-            font-style: normal;
-            font-size: 20px;
+
+        .form-section h2 i {
+            color: #4f6df5;
         }
-        
+
+        .field-order {
+            background: #e8eeff;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: #3a56d5;
+        }
+
         .form-group {
-            margin-bottom: 24px;
-            position: relative;
+            margin-bottom: 20px;
         }
-        
+
         .form-group label {
             display: block;
             margin-bottom: 8px;
+            color: #333;
             font-weight: 600;
-            color: #34495e;
-            font-size: 15px;
+            font-size: 1rem;
+        }
+
+        .form-group .value-display {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 5px;
+            margin-bottom: 8px;
         }
-        
-        .form-group.required label::after {
-            content: " *";
-            color: var(--danger-color);
+
+        .form-group .value-display span {
+            font-weight: 600;
+            color: #4f6df5;
         }
-        
-        .input-with-unit {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .input-with-unit input {
-            flex: 1;
-            padding: 16px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: var(--transition);
-        }
-        
-        .input-with-unit .unit {
-            color: #7f8c8d;
-            font-size: 16px;
-            min-width: 40px;
-        }
-        
-        .input-with-unit input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-        }
-        
-        .input-with-unit input.valid {
-            border-color: var(--success-color);
-        }
-        
-        .input-with-unit input.invalid {
-            border-color: var(--danger-color);
-        }
-        
-        .sleep-phase-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-        
-        .phase-total-display {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 12px;
-            margin-top: 10px;
-            text-align: center;
-            font-size: 14px;
-            transition: var(--transition);
-        }
-        
-        .phase-total-display.valid {
-            background: #d5f4e6;
-            color: #27ae60;
-        }
-        
-        .phase-total-display.invalid {
-            background: #fadbd8;
-            color: #e74c3c;
-        }
-        
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 8px;
-        }
-        
-        .checkbox-group input[type="checkbox"] {
-            width: 22px;
-            height: 22px;
-            accent-color: var(--primary-color);
-        }
-        
-        .validation-message {
-            font-size: 13px;
-            margin-top: 6px;
-            padding: 6px 10px;
-            border-radius: 6px;
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        .validation-message.success {
-            background: #d5f4e6;
-            color: #27ae60;
-            display: block;
-        }
-        
-        .validation-message.error {
-            background: #fadbd8;
-            color: #e74c3c;
-            display: block;
-        }
-        
-        .validation-message.info {
-            background: #d6eaf8;
-            color: #3498db;
-            display: block;
-        }
-        
-        .progress-bar {
-            height: 4px;
+
+        input[type="range"] {
+            width: 100%;
+            height: 12px;
+            -webkit-appearance: none;
+            appearance: none;
             background: #e0e0e0;
-            border-radius: 2px;
-            margin: 25px 0;
-            overflow: hidden;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: var(--primary-color);
-            width: 0%;
-            transition: width 0.5s ease;
-        }
-        
-        .loading-indicator {
-            display: none;
-            text-align: center;
-            margin: 25px 0;
-            color: var(--primary-color);
-        }
-        
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
-        }
-        
-        .result-card {
-            display: none;
-            padding: 20px;
-            border-radius: var(--border-radius);
-            margin-top: 20px;
-            text-align: center;
-            animation: fadeIn 0.5s ease;
-        }
-        
-        .result-card.success {
-            background: #d5f4e6;
-            border: 2px solid #a3e4c7;
-            color: #27ae60;
-        }
-        
-        .result-card.error {
-            background: #fadbd8;
-            border: 2px solid #f5b7b1;
-            color: #e74c3c;
-        }
-        
-        .result-score {
-            font-size: 42px;
-            font-weight: 700;
+            border-radius: 10px;
+            outline: none;
             margin: 10px 0;
         }
-        
-        .result-suggestion {
-            font-size: 16px;
-            margin-bottom: 15px;
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #4f6df5;
+            cursor: pointer;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s;
         }
-        
-        .action-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #3a56d5;
+            transform: scale(1.1);
+        }
+
+        input[type="number"], input[type="date"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        input[type="number"]:focus, input[type="date"]:focus {
+            border-color: #4f6df5;
+            box-shadow: 0 0 0 3px rgba(79, 109, 245, 0.2);
+            outline: none;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
             margin-top: 30px;
         }
-        
+
         .btn {
-            padding: 16px 24px;
+            padding: 15px 40px;
             border: none;
-            border-radius: 8px;
-            font-size: 16px;
+            border-radius: 10px;
+            font-size: 1.1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: var(--transition);
+            transition: all 0.3s;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 10px;
+            min-width: 180px;
         }
-        
+
         .btn-primary {
-            background: var(--primary-color);
+            background: linear-gradient(90deg, #4f6df5, #3a56d5);
             color: white;
+            box-shadow: 0 5px 15px rgba(79, 109, 245, 0.3);
         }
-        
-        .btn-primary:hover {
-            background: #2980b9;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(52, 152, 219, 0.2);
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(79, 109, 245, 0.4);
         }
-        
+
         .btn-primary:disabled {
-            background: #95a5a6;
+            background: #ccc;
             cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
         }
-        
+
         .btn-secondary {
-            background: #ecf0f1;
-            color: var(--dark-color);
+            background: #f8f9ff;
+            color: #4f6df5;
+            border: 2px solid #4f6df5;
         }
-        
+
         .btn-secondary:hover {
-            background: #bdc3c7;
+            background: #eef1ff;
+            transform: translateY(-3px);
         }
-        
-        .token-warning {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 8px;
+
+        .status-message {
             padding: 15px;
-            margin-bottom: 20px;
-            color: #856404;
-            font-size: 14px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 600;
+            display: none;
+            animation: fadeIn 0.5s ease-out;
         }
-        
-        .token-warning h4 {
-            margin: 0 0 8px 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
         }
-        
-        @keyframes slideDown {
-            from { transform: translateY(-20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+
+        .status-loading {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
         }
-        
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4f6df5;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
-        @media (max-width: 480px) {
-            .app-container {
-                padding: 10px;
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9rem;
+            border-top: 1px solid #eee;
+            background: #f8f9ff;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
             }
             
-            .header-card, .form-container {
-                padding: 20px;
+            .header h1 {
+                font-size: 2rem;
             }
             
-            .action-buttons {
-                grid-template-columns: 1fr;
+            .button-group {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .btn {
+                width: 100%;
             }
         }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- 令牌警告 -->
-        <div class="token-warning">
-            <h4>⚠️ 重要配置说明</h4>
-            <p>此表单需要配置Gitee访问令牌才能正常工作。请按照以下步骤操作：</p>
-            <ol>
-                <li>打开 <code>dimi_sleep_form_github.html</code> 文件</li>
-                <li>找到第15行：<code>giteeToken: 'YOUR_GITEE_ACCESS_TOKEN'</code></li>
-                <li>将 <code>YOUR_GITEE_ACCESS_TOKEN</code> 替换为您的真实Gitee令牌</li>
-                <li>保存文件并重新上传到GitHub</li>
-            </ol>
-            <p><strong>注意</strong>：令牌会暴露在客户端代码中，建议仅用于测试。生产环境应使用后端代理。</p>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-moon"></i> DIMI 睡眠数据收集系统</h1>
+            <p>记录您的睡眠数据，优化训练计划 - GitHub Pages 集成版本</p>
+            <div class="version-badge">v2.0 新格式</div>
         </div>
         
-        <!-- 头部 -->
-        <div class="header-card">
-            <h1>
-                <span>🌙</span>
-                DIMI 晨间睡眠数据收集
-            </h1>
-            <p class="subtitle">GitHub Pages版本 · 数据存储于您的Gitee私有仓库</p>
-            <p class="subtitle"><small>备用方案 · 当钉钉不可用时使用</small></p>
-        </div>
-        
-        <!-- 日期显示 -->
-        <div class="date-card">
-            📅 今天日期：<span id="current-date"></span>
-        </div>
-        
-        <!-- Gitee令牌配置 -->
-        <div class="form-container config-panel" id="config-panel">
-            <div class="section-title">
-                <i>⚙️</i> Gitee API配置
-            </div>
-            
-            <div class="config-warning" style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-                <p style="margin: 0 0 10px 0; color: #856404; font-weight: 600;">⚠️ 需要配置Gitee令牌才能提交数据</p>
-                <p style="margin: 0; color: #856404; font-size: 14px;">为了安全起见，GitHub不允许在代码中存储API令牌。请在此处输入您的Gitee个人访问令牌：</p>
-            </div>
-            
-            <div class="form-group required">
-                <label for="gitee-token">Gitee个人访问令牌</label>
-                <input type="password" id="gitee-token" placeholder="输入您的Gitee令牌 (32位十六进制字符)" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-                <div class="help-text" style="font-size: 12px; color: #6c757d; margin-top: 5px;">
-                    您的Gitee令牌: <code>ed4425ff9eae674d02248852bcb8fd63</code> (从您的配置中获取)
+        <div class="content">
+            <form id="sleepForm">
+                <!-- 基本信息部分 -->
+                <div class="form-section">
+                    <h2><i class="fas fa-user-circle"></i> 基本信息</h2>
+                    
+                    <div class="form-group">
+                        <label for="date">记录日期</label>
+                        <input type="date" id="date" name="date" required>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="save-token-local">保存到本地浏览器</label>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <input type="checkbox" id="save-token-local" checked>
-                    <span style="font-size: 14px; color: #6c757d;">勾选后将令牌保存到浏览器本地存储，下次无需重新输入</span>
-                </div>
-            </div>
-            
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button type="button" id="save-config-btn" class="btn btn-primary" style="flex: 1;">保存配置</button>
-                <button type="button" id="test-config-btn" class="btn btn-secondary" style="flex: 1;">测试连接</button>
-            </div>
-            
-            <div id="config-status" style="margin-top: 15px; padding: 10px; border-radius: 6px; display: none;"></div>
-        </div>
-        
-        <!-- 表单 -->
-        <div class="form-container">
-            <form id="sleep-data-form">
+                
                 <!-- 睡眠时长 -->
-                <div class="section-title">
-                    <i>😴</i> 睡眠时长
-                </div>
-                
-                <div class="form-group required">
-                    <label for="sleep-hours">睡眠小时</label>
-                    <div class="input-with-unit">
-                        <input type="number" id="sleep-hours" min="0" max="24" step="0.5" placeholder="例如：7.5" required>
-                        <span class="unit">小时</span>
-                    </div>
-                    <div class="validation-message" id="hours-message"></div>
-                </div>
-                
-                <div class="form-group required">
-                    <label for="sleep-minutes">睡眠分钟</label>
-                    <div class="input-with-unit">
-                        <input type="number" id="sleep-minutes" min="0" max="59" step="1" placeholder="例如：30" required>
-                        <span class="unit">分钟</span>
-                    </div>
-                    <div class="validation-message" id="minutes-message"></div>
-                </div>
-                
-                <!-- 睡眠阶段 -->
-                <div class="section-title">
-                    <i>📊</i> 睡眠阶段比例
-                </div>
-                
-                <div class="sleep-phase-grid">
-                    <div class="form-group required">
-                        <label for="deep-sleep">深睡比例</label>
-                        <div class="input-with-unit">
-                            <input type="number" id="deep-sleep" min="0" max="100" step="0.1" placeholder="例如：20.0" required>
-                            <span class="unit">%</span>
+                <div class="form-section">
+                    <h2><i class="fas fa-clock"></i> 睡眠时长</h2>
+                    <div class="field-order">请按顺序填写以下数据项</div>
+                    
+                    <div class="form-group">
+                        <div class="value-display">
+                            <label for="sleepDuration">总睡眠时长 (小时)</label>
+                            <span id="durationValue">7.5</span>
                         </div>
+                        <input type="range" id="sleepDuration" name="sleepDuration" min="4" max="12" step="0.1" value="7.5" oninput="updateDurationValue(this.value)">
+                    </div>
+                </div>
+                
+                <!-- 睡眠阶段比例 -->
+                <div class="form-section">
+                    <h2><i class="fas fa-bed"></i> 睡眠阶段比例</h2>
+                    <div class="field-order">请按以下顺序填写：清醒比例 → REM比例 → 浅睡比例 → 深睡比例 → 清醒5分钟次数 → 静息心率</div>
+                    
+                    <div class="form-group">
+                        <div class="value-display">
+                            <label for="awakePercentage">清醒比例 (%)</label>
+                            <span id="awakeValue">10</span>
+                        </div>
+                        <input type="range" id="awakePercentage" name="awakePercentage" min="0" max="30" step="1" value="10" oninput="updateAwakeValue(this.value)">
                     </div>
                     
-                    <div class="form-group required">
-                        <label for="rem-sleep">REM睡眠比例</label>
-                        <div class="input-with-unit">
-                            <input type="number" id="rem-sleep" min="0" max="100" step="0.1" placeholder="例如：25.0" required>
-                            <span class="unit">%</span>
+                    <div class="form-group">
+                        <div class="value-display">
+                            <label for="remSleep">REM比例 (%)</label>
+                            <span id="remValue">20</span>
                         </div>
+                        <input type="range" id="remSleep" name="remSleep" min="10" max="35" step="1" value="20" oninput="updateRemValue(this.value)">
                     </div>
                     
-                    <div class="form-group required">
-                        <label for="light-sleep">浅睡比例</label>
-                        <div class="input-with-unit">
-                            <input type="number" id="light-sleep" min="0" max="100" step="0.1" placeholder="例如：55.0" required>
-                            <span class="unit">%</span>
+                    <div class="form-group">
+                        <div class="value-display">
+                            <label for="lightSleep">浅睡比例 (%)</label>
+                            <span id="lightValue">45</span>
                         </div>
+                        <input type="range" id="lightSleep" name="lightSleep" min="30" max="60" step="1" value="45" oninput="updateLightValue(this.value)">
                     </div>
                     
-                    <div class="form-group required">
-                        <label for="awake-percent">清醒比例</label>
-                        <div class="input-with-unit">
-                            <input type="number" id="awake-percent" min="0" max="100" step="0.1" placeholder="例如：2.0" required>
-                            <span class="unit">%</span>
+                    <div class="form-group">
+                        <div class="value-display">
+                            <label for="deepSleep">深睡比例 (%)</label>
+                            <span id="deepValue">25</span>
                         </div>
+                        <input type="range" id="deepSleep" name="deepSleep" min="5" max="50" step="1" value="25" oninput="updateDeepValue(this.value)">
                     </div>
-                </div>
-                
-                <div class="phase-total-display" id="phase-total-display">
-                    睡眠阶段总和：<span id="phase-total">0</span>%
+                    
+                    <div class="form-group">
+                        <label for="awake5minCount">清醒5分钟次数 (次)</label>
+                        <input type="number" id="awake5minCount" name="awake5minCount" min="0" max="20" value="2" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="restingHeartRate">静息心率 (bpm)</label>
+                        <input type="number" id="restingHeartRate" name="restingHeartRate" min="40" max="100" value="60" required>
+                    </div>
                 </div>
                 
                 <!-- 生理指标 -->
-                <div class="section-title">
-                    <i>❤️</i> 生理指标
-                </div>
-                
-                <div class="form-group required">
-                    <label for="resting-heart-rate">静息心率</label>
-                    <div class="input-with-unit">
-                        <input type="number" id="resting-heart-rate" min="40" max="100" step="1" placeholder="例如：55" required>
-                        <span class="unit">bpm</span>
+                <div class="form-section">
+                    <h2><i class="fas fa-heartbeat"></i> 生理指标</h2>
+                    <div class="field-order">请按以下顺序填写：HRV → 体重 → 体脂率</div>
+                    
+                    <div class="form-group">
+                        <label for="hrv">HRV (ms)</label>
+                        <input type="number" id="hrv" name="hrv" min="20" max="150" value="50" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="weight">体重 (kg)</label>
+                        <input type="number" id="weight" name="weight" min="40" max="150" step="0.1" value="70" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="bodyFat">体脂率 (%)</label>
+                        <input type="number" id="bodyFat" name="bodyFat" min="5" max="40" step="0.1" value="18" required>
                     </div>
                 </div>
                 
-                <div class="form-group">
-                    <label for="hrv">HRV</label>
-                    <div class="input-with-unit">
-                        <input type="number" id="hrv" min="20" max="150" step="1" placeholder="例如：65">
-                        <span class="unit">ms</span>
-                    </div>
-                </div>
-                
-                <!-- 身体成分 -->
-                <div class="section-title">
-                    <i>⚖️</i> 身体成分
-                </div>
-                
-                <div class="form-group required">
-                    <label for="weight">体重</label>
-                    <div class="input-with-unit">
-                        <input type="number" id="weight" min="30" max="150" step="0.1" placeholder="例如：72.5" required>
-                        <span class="unit">kg</span>
-                    </div>
-                </div>
-                
-                <div class="form-group required">
-                    <label for="body-fat-percentage">体脂率</label>
-                    <div class="input-with-unit">
-                        <input type="number" id="body-fat-percentage" min="5" max="40" step="0.1" placeholder="例如：15.6" required>
-                        <span class="unit">%</span>
-                    </div>
-                </div>
-                
-                <!-- 其他指标 -->
-                <div class="section-title">
-                    <i>📝</i> 其他指标
-                </div>
-                
-                <div class="form-group">
-                    <label for="awake-count">>5分钟的清醒次数</label>
-                    <div class="input-with-unit">
-                        <input type="number" id="awake-count" min="0" max="20" step="1" placeholder="例如：1">
-                        <span class="unit">次</span>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="feeling-rested">
-                        <label for="feeling-rested">晨起感觉休息充分</label>
-                    </div>
-                </div>
-                
-                <!-- 进度条 -->
-                <div class="progress-bar">
-                    <div class="progress-fill" id="form-progress"></div>
-                </div>
-                
-                <!-- 加载指示器 -->
-                <div class="loading-indicator" id="loading-indicator">
-                    <div class="loading-spinner"></div>
-                    <p>正在提交数据到Gitee仓库...</p>
-                </div>
-                
-                <!-- 结果卡片 -->
-                <div class="result-card" id="result-card">
-                    <div id="result-content"></div>
-                </div>
-                
-                <!-- 操作按钮 -->
-                <div class="action-buttons">
-                    <button type="button" class="btn btn-secondary" onclick="handleSaveDraft()">
-                        💾 保存草稿
+                <!-- 提交按钮 -->
+                <div class="button-group">
+                    <button type="button" class="btn btn-secondary" onclick="previewData()">
+                        <i class="fas fa-eye"></i> 预览数据
                     </button>
-                    <button type="submit" class="btn btn-primary" id="submit-btn">
-                        📤 提交数据到Gitee
+                    
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <i class="fas fa-paper-plane"></i> 提交数据到 Gitee
                     </button>
                 </div>
+                
+                <div id="statusMessage" class="status-message"></div>
             </form>
         </div>
+        
+        <footer>
+            <p>DIMI 健身自动化系统 &copy; 2026 | 数据将提交到 <a href="https://gitee.com" target="_blank">Gitee 仓库</a></p>
+            <p>GitHub Pages 托管版本 | 最后更新: 2026-03-04 | 新格式版本</p>
+        </footer>
     </div>
-    
+
     <script>
-        // 页面加载时初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            // 显示当前日期
-            const now = new Date();
-            document.getElementById('current-date').textContent = 
-                now.getFullYear() + '-' + 
-                String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                String(now.getDate()).padStart(2, '0');
-            
-            // 加载草稿
-            loadFromLocalStorage();
-            
-            // 绑定表单提交
-            document.getElementById('sleep-data-form').addEventListener('submit', handleFormSubmit);
-            
-            // 绑定实时验证
-            document.querySelectorAll('input').forEach(input => {
-                input.addEventListener('input', function() {
-                    validateInput(this);
-                    updateFormProgress();
-                    saveToLocalStorage();
-                });
-            });
-            
-            // 睡眠阶段总和验证
-            ['deep-sleep', 'rem-sleep', 'light-sleep', 'awake-percent'].forEach(id => {
-                document.getElementById(id).addEventListener('input', validateSleepPhases);
-            });
-        });
+        // ============================================
+        // 配置信息 - 需要根据实际情况修改
+        // ============================================
+        const CONFIG = {
+            // 腾讯云SCF函数地址
+            // 格式: https://xxxxxx.ap-guangzhou.tencentscf.com
+            SCF_API_URL: 'https://1406223154-g8xc4seeyd.ap-guangzhou.tencentscf.com'
+        };
+
+        // 设置默认日期为今天
+        document.getElementById('date').valueAsDate = new Date();
+        
+        // 更新滑块显示值的函数
+        function updateDurationValue(val) {
+            document.getElementById('durationValue').textContent = val;
+        }
+        
+        function updateAwakeValue(val) {
+            document.getElementById('awakeValue').textContent = val;
+        }
+        
+        function updateRemValue(val) {
+            document.getElementById('remValue').textContent = val;
+        }
+        
+        function updateLightValue(val) {
+            document.getElementById('lightValue').textContent = val;
+        }
+        
+        function updateDeepValue(val) {
+            document.getElementById('deepValue').textContent = val;
+        }
+        
+        // 显示状态消息
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.innerHTML = message;
+            statusDiv.className = 'status-message status-' + type;
+            statusDiv.style.display = 'block';
+        }
+        
+        // 隐藏状态消息
+        function hideStatus() {
+            document.getElementById('statusMessage').style.display = 'none';
+        }
+        
+        // 设置提交按钮状态
+        function setSubmitButton(loading) {
+            const btn = document.getElementById('submitBtn');
+            if (loading) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="loading-spinner"></span>提交中...';
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> 提交数据到 Gitee';
+            }
+        }
+        
+        // 预览数据
+        function previewData() {
+            const data = collectFormData();
+            alert('数据预览：\n' + JSON.stringify(data, null, 2));
+        }
         
         // 收集表单数据
         function collectFormData() {
-            const now = new Date();
             return {
-                date: now.toISOString().split('T')[0],
-                timestamp: now.toISOString(),
-                sleep_hours: parseFloat(document.getElementById('sleep-hours').value) || 0,
-                sleep_minutes: parseFloat(document.getElementById('sleep-minutes').value) || 0,
-                deep_sleep_percent: parseFloat(document.getElementById('deep-sleep').value) || 0,
-                rem_sleep_percent: parseFloat(document.getElementById('rem-sleep').value) || 0,
-                light_sleep_percent: parseFloat(document.getElementById('light-sleep').value) || 0,
-                awake_percent: parseFloat(document.getElementById('awake-percent').value) || 0,
-                resting_heart_rate: parseInt(document.getElementById('resting-heart-rate').value) || 0,
-                hrv: document.getElementById('hrv').value ? parseInt(document.getElementById('hrv').value) : null,
-                weight: parseFloat(document.getElementById('weight').value) || 0,
-                body_fat_percentage: parseFloat(document.getElementById('body-fat-percentage').value) || 0,
-                awake_count: document.getElementById('awake-count').value ? parseInt(document.getElementById('awake-count').value) : null,
-                feeling_rested: document.getElementById('feeling-rested').checked
+                date: document.getElementById('date').value,
+                sleepDuration: parseFloat(document.getElementById('sleepDuration').value),
+                awakePercentage: parseInt(document.getElementById('awakePercentage').value),
+                remSleep: parseInt(document.getElementById('remSleep').value),
+                lightSleep: parseInt(document.getElementById('lightSleep').value),
+                deepSleep: parseInt(document.getElementById('deepSleep').value),
+                awake5minCount: parseInt(document.getElementById('awake5minCount').value),
+                restingHeartRate: parseInt(document.getElementById('restingHeartRate').value),
+                hrv: parseInt(document.getElementById('hrv').value),
+                weight: parseFloat(document.getElementById('weight').value),
+                bodyFat: parseFloat(document.getElementById('bodyFat').value),
+                timestamp: new Date().toISOString()
             };
         }
         
-        // 验证睡眠阶段总和
-        function validateSleepPhases() {
-            const deep = parseFloat(document.getElementById('deep-sleep').value) || 0;
-            const rem = parseFloat(document.getElementById('rem-sleep').value) || 0;
-            const light = parseFloat(document.getElementById('light-sleep').value) || 0;
-            const awake = parseFloat(document.getElementById('awake-percent').value) || 0;
-            
-            const total = deep + rem + light + awake;
-            const display = document.getElementById('phase-total-display');
-            const totalSpan = document.getElementById('phase-total');
-            
-            totalSpan.textContent = total.toFixed(1);
-            
-            if (total === 100) {
-                display.className = 'phase-total-display valid';
-                return true;
-            } else {
-                display.className = 'phase-total-display invalid';
-                return false;
+        // 验证数据
+        function validateData(data) {
+            // 检查睡眠阶段比例总和
+            const totalPercentage = data.awakePercentage + data.remSleep + data.lightSleep + data.deepSleep;
+            if (totalPercentage < 95 || totalPercentage > 105) {
+                return {
+                    valid: false,
+                    message: '睡眠阶段比例总和为 ' + totalPercentage + '%，应在95%-105%之间，请检查数据'
+                };
             }
+            return { valid: true };
         }
-
-        // Gitee令牌配置管理
-        function loadGiteeToken() {
-            const savedToken = localStorage.getItem('dimi_gitee_token');
-            if (savedToken && savedToken.trim() !== '') {
-                window.DIMI_CONFIG.giteeToken = savedToken;
-                document.getElementById('gitee-token').value = savedToken;
-                console.log('从本地存储加载Gitee令牌');
-                return true;
-            }
-            return false;
-        }
-
-        function saveGiteeToken(token, saveToLocal = true) {
-            if (!token || token.trim() === '') {
-                return false;
+        
+        // 提交表单
+        async function submitForm(event) {
+            event.preventDefault();
+            hideStatus();
+            
+            // 收集数据
+            const formData = collectFormData();
+            
+            // 验证数据
+            const validation = validateData(formData);
+            if (!validation.valid) {
+                showStatus(validation.message, 'error');
+                return;
             }
             
-            // 验证令牌格式（32位十六进制字符）
-            const tokenRegex = /^[a-fA-F0-9]{32}$/;
-            if (!tokenRegex.test(token)) {
-                return { success: false, message: '令牌格式不正确，应为32位十六进制字符' };
-            }
-            
-            window.DIMI_CONFIG.giteeToken = token;
-            
-            if (saveToLocal) {
-                localStorage.setItem('dimi_gitee_token', token);
-                console.log('Gitee令牌已保存到本地存储');
-            }
-            
-            return { success: true, message: '令牌配置成功' };
-        }
-
-        async function testGiteeConnection(token) {
-            if (!token || token.trim() === '') {
-                return { success: false, message: '请先输入Gitee令牌' };
-            }
-            
-            console.log('测试Gitee连接，使用令牌:', token.substring(0, 8) + '...');
-            
-            // 生成唯一文件名避免冲突
-            const timestamp = new Date().getTime();
-            const testFilename = `test_connection_${timestamp}.json`;
-            const testFilePath = `memory/fitness/sleep_inputs/${testFilename}`;
-            
-            // 测试数据
-            const testJson = JSON.stringify({ 
-                test: true, 
-                timestamp: new Date().toISOString(), 
-                purpose: 'DIMI API连接测试',
-                uniqueId: timestamp
-            });
-            const contentBase64 = btoa(unescape(encodeURIComponent(testJson)));
-            
-            // 已知Gitee仓库使用main分支（诊断脚本确认）
-            const branch = 'main';
+            // 设置按钮为加载状态
+            setSubmitButton(true);
+            showStatus('<span class="loading-spinner"></span>正在提交数据到 Gitee...', 'loading');
             
             try {
-                const testData = {
-                    content: contentBase64,
-                    message: 'DIMI API连接测试 - 唯一文件避免冲突',
-                    branch: branch
-                };
-                
-                const createFileUrl = `https://gitee.com/api/v5/repos/${window.DIMI_CONFIG.giteeOwner}/${window.DIMI_CONFIG.giteeRepo}/contents/${testFilePath}?access_token=${token}`;
-                console.log('API请求URL:', createFileUrl.substring(0, 100) + '...');
-                console.log('请求数据:', JSON.stringify(testData));
-                
-                const response = await fetch(createFileUrl, {
+                // 调用腾讯云SCF函数
+                const response = await fetch(CONFIG.SCF_API_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(testData)
-                });
-                
-                console.log('响应状态:', response.status);
-                
-                if (response.ok) {
-                    const result = await response.json();
-                    console.log('API响应成功:', result);
-                    
-                    // 可选：清理测试文件（避免积累）
-                    // 但为了简化，暂时保留
-                    
-                    return { success: true, message: `Gitee API连接测试成功 (分支: ${branch})` };
-                } else {
-                    const errorText = await response.text();
-                    console.error('API错误响应:', errorText);
-                    
-                    let errorMsg = `API连接失败: ${response.status}`;
-                    
-                    try {
-                        const errorJson = JSON.parse(errorText);
-                        if (errorJson.message) {
-                            errorMsg = `API错误: ${errorJson.message}`;
-                        }
-                    } catch (e) {
-                        // 保持原错误信息
-                        errorMsg += ` ${errorText.substring(0, 100)}`;
-                    }
-                    
-                    return { success: false, message: errorMsg };
-                }
-            } catch (error) {
-                console.error('网络错误:', error);
-                return { success: false, message: `网络错误: ${error.message}` };
-            }
-        }
-
-        function setupConfigPanel() {
-            const saveBtn = document.getElementById('save-config-btn');
-            const testBtn = document.getElementById('test-config-btn');
-            const tokenInput = document.getElementById('gitee-token');
-            const saveLocalCheckbox = document.getElementById('save-token-local');
-            const configStatus = document.getElementById('config-status');
-            
-            if (!saveBtn || !testBtn) return;
-            
-            // 加载已保存的令牌
-            loadGiteeToken();
-            
-            saveBtn.addEventListener('click', async () => {
-                const token = tokenInput.value.trim();
-                const saveToLocal = saveLocalCheckbox.checked;
-                
-                const result = saveGiteeToken(token, saveToLocal);
-                
-                configStatus.style.display = 'block';
-                if (result.success) {
-                    configStatus.style.backgroundColor = '#d4edda';
-                    configStatus.style.border = '1px solid #c3e6cb';
-                    configStatus.style.color = '#155724';
-                    configStatus.innerHTML = `✅ ${result.message}`;
-                    
-                    // 自动测试连接
-                    setTimeout(async () => {
-                        const testResult = await testGiteeConnection(token);
-                        configStatus.innerHTML += `<br>${testResult.success ? '✅' : '❌'} ${testResult.message}`;
-                    }, 500);
-                } else {
-                    configStatus.style.backgroundColor = '#f8d7da';
-                    configStatus.style.border = '1px solid #f5c6cb';
-                    configStatus.style.color = '#721c24';
-                    configStatus.innerHTML = `❌ ${result.message}`;
-                }
-            });
-            
-            testBtn.addEventListener('click', async () => {
-                const token = tokenInput.value.trim();
-                if (!token) {
-                    configStatus.style.display = 'block';
-                    configStatus.style.backgroundColor = '#f8d7da';
-                    configStatus.style.border = '1px solid #f5c6cb';
-                    configStatus.style.color = '#721c24';
-                    configStatus.innerHTML = '❌ 请先输入Gitee令牌';
-                    return;
-                }
-                
-                configStatus.style.display = 'block';
-                configStatus.style.backgroundColor = '#fff3cd';
-                configStatus.style.border = '1px solid #ffeaa7';
-                configStatus.style.color = '#856404';
-                configStatus.innerHTML = '⏳ 正在测试Gitee API连接...';
-                
-                const result = await testGiteeConnection(token);
-                
-                if (result.success) {
-                    configStatus.style.backgroundColor = '#d4edda';
-                    configStatus.style.border = '1px solid #c3e6cb';
-                    configStatus.style.color = '#155724';
-                    configStatus.innerHTML = `✅ ${result.message}`;
-                } else {
-                    configStatus.style.backgroundColor = '#f8d7da';
-                    configStatus.style.border = '1px solid #f5c6cb';
-                    configStatus.style.color = '#721c24';
-                    configStatus.innerHTML = `❌ ${result.message}`;
-                }
-            });
-        }
-
-        // 页面初始化时设置配置面板
-        document.addEventListener('DOMContentLoaded', function() {
-            setupConfigPanel();
-            
-            // 检查是否已配置令牌
-            if (window.DIMI_CONFIG.giteeToken && window.DIMI_CONFIG.giteeToken.trim() !== '') {
-                console.log('Gitee令牌已配置');
-            } else {
-                console.log('Gitee令牌未配置，请在上方配置面板中输入');
-            }
-        });
-
-        // 表单提交处理
-        async function handleFormSubmit(e) {
-            e.preventDefault();
-            
-            // 最终验证
-            if (!validateSleepPhases()) {
-                showResult('error', '请调整睡眠阶段比例，确保总和为100%');
-                return;
-            }
-            
-            // 检查Gitee令牌配置
-            const token = window.DIMI_CONFIG.giteeToken;
-            if (!token || token.trim() === '') {
-                showResult('error', '请先在上方配置面板中输入Gitee访问令牌<br><small>您的Gitee令牌: <code>ed4425ff9eae674d02248852bcb8fd63</code></small>');
-                
-                // 滚动到配置面板
-                document.getElementById('config-panel').scrollIntoView({ behavior: 'smooth' });
-                // 高亮显示令牌输入框
-                const tokenInput = document.getElementById('gitee-token');
-                tokenInput.focus();
-                tokenInput.style.border = '2px solid #e74c3c';
-                setTimeout(() => { tokenInput.style.border = ''; }, 2000);
-                
-                return;
-            }
-            
-            const formData = collectFormData();
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            const filename = `睡眠数据_${timestamp}.json`;
-            const filePath = `${window.DIMI_CONFIG.giteePath}/${filename}`;
-            
-            // 显示加载指示器
-            document.getElementById('loading-indicator').style.display = 'block';
-            document.getElementById('submit-btn').disabled = true;
-            document.getElementById('result-card').style.display = 'none';
-            
-            try {
-                // 构建Gitee API请求 - 使用查询参数传递令牌
-                const apiUrl = `https://gitee.com/api/v5/repos/${window.DIMI_CONFIG.giteeOwner}/${window.DIMI_CONFIG.giteeRepo}/contents/${filePath}?access_token=${token}`;
-                
-                // Base64编码内容
-                const contentStr = JSON.stringify(formData, null, 2);
-                const contentBase64 = btoa(unescape(encodeURIComponent(contentStr)));
-                
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        content: contentBase64,
-                        message: `DIMI睡眠数据提交 ${new Date().toLocaleString()}`,
-                        branch: 'main'
-                    })
+                    body: JSON.stringify(formData)
                 });
                 
                 const result = await response.json();
                 
-                // 隐藏加载指示器
-                document.getElementById('loading-indicator').style.display = 'none';
-                document.getElementById('submit-btn').disabled = false;
-                
-                if (response.ok && result.content && result.commit) {
-                    // 显示成功结果
-                    const fileUrl = result.content.html_url;
-                    showResult('success', {
-                        message: '数据已成功保存到Gitee仓库',
-                        fileUrl: fileUrl,
-                        filename: filename
-                    });
+                if (response.ok && result.success) {
+                    showStatus('✅ 数据提交成功！已保存到 Gitee 仓库。', 'success');
                     
-                    // 清除本地存储
-                    if (window.DIMI_CONFIG.enableLocalStorage) {
-                        const today = new Date().toISOString().split('T')[0];
-                        localStorage.removeItem(`dimi_sleep_draft_${today}`);
-                    }
+                    // 3秒后重置表单
+                    setTimeout(() => {
+                        document.getElementById('sleepForm').reset();
+                        document.getElementById('date').valueAsDate = new Date();
+                        updateDurationValue(7.5);
+                        updateAwakeValue(10);
+                        updateRemValue(20);
+                        updateLightValue(45);
+                        updateDeepValue(25);
+                        hideStatus();
+                    }, 3000);
                 } else {
-                    const errorMsg = result.message || 'Gitee API错误';
-                    showResult('error', `提交失败：${errorMsg}`);
-                    console.error('Gitee API错误:', result);
+                    showStatus('❌ 提交失败: ' + (result.error || result.message || '未知错误'), 'error');
                 }
             } catch (error) {
-                document.getElementById('loading-indicator').style.display = 'none';
-                document.getElementById('submit-btn').disabled = false;
-                showResult('error', `网络错误：${error.message}`);
                 console.error('提交错误:', error);
+                showStatus('❌ 提交失败: ' + error.message + '<br>请检查网络连接或联系管理员', 'error');
+            } finally {
+                setSubmitButton(false);
             }
         }
         
-        // 显示结果
-        function showResult(type, data) {
-            const card = document.getElementById('result-card');
-            const content = document.getElementById('result-content');
-            
-            card.className = `result-card ${type}`;
-            
-            if (type === 'success') {
-                content.innerHTML = `
-                    <h3>✅ 数据提交成功！</h3>
-                    <p>您的睡眠数据已安全保存到Gitee仓库。</p>
-                    <div class="result-suggestion">
-                        <p><strong>文件名：</strong> ${data.filename}</p>
-                        <p><strong>文件链接：</strong> <a href="${data.fileUrl}" target="_blank">点击查看</a></p>
-                    </div>
-                    <p><small>提交时间：${new Date().toLocaleTimeString()}</small></p>
-                    <p><em>注意：睡眠得分和训练建议将由AI在钉钉中提供。</em></p>
-                `;
-            } else {
-                content.innerHTML = `
-                    <h3>❌ ${typeof data === 'string' ? data : '提交失败'}</h3>
-                    <p>请检查网络连接或Gitee令牌配置。</p>
-                    ${typeof data === 'string' && data.includes('令牌') ? 
-                        '<p><strong>解决方案：</strong>按照页面顶部的说明配置Gitee访问令牌。</p>' : ''}
-                `;
-            }
-            
-            card.style.display = 'block';
-            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-        
-        // 本地存储功能
-        function saveToLocalStorage() {
-            if (!window.DIMI_CONFIG.enableLocalStorage) return;
-            
-            const formData = collectFormData();
-            const today = new Date().toISOString().split('T')[0];
-            
-            try {
-                localStorage.setItem(`dimi_sleep_draft_${today}`, JSON.stringify(formData));
-            } catch (e) {
-                console.warn('本地存储失败:', e);
-            }
-        }
-        
-        function loadFromLocalStorage() {
-            if (!window.DIMI_CONFIG.enableLocalStorage) return;
-            
-            const today = new Date().toISOString().split('T')[0];
-            const saved = localStorage.getItem(`dimi_sleep_draft_${today}`);
-            
-            if (saved) {
-                try {
-                    const data = JSON.parse(saved);
-                    
-                    // 填充表单字段
-                    if (data.sleep_hours) document.getElementById('sleep-hours').value = data.sleep_hours;
-                    if (data.sleep_minutes) document.getElementById('sleep-minutes').value = data.sleep_minutes;
-                    if (data.deep_sleep_percent) document.getElementById('deep-sleep').value = data.deep_sleep_percent;
-                    if (data.rem_sleep_percent) document.getElementById('rem-sleep').value = data.rem_sleep_percent;
-                    if (data.light_sleep_percent) document.getElementById('light-sleep').value = data.light_sleep_percent;
-                    if (data.awake_percent) document.getElementById('awake-percent').value = data.awake_percent;
-                    if (data.resting_heart_rate) document.getElementById('resting-heart-rate').value = data.resting_heart_rate;
-                    if (data.hrv) document.getElementById('hrv').value = data.hrv;
-                    if (data.weight) document.getElementById('weight').value = data.weight;
-                    if (data.body_fat_percentage) document.getElementById('body-fat-percentage').value = data.body_fat_percentage;
-                    if (data.awake_count) document.getElementById('awake-count').value = data.awake_count;
-                    if (data.feeling_rested) document.getElementById('feeling-rested').checked = data.feeling_rested;
-                    
-                    // 更新验证状态
-                    validateSleepPhases();
-                    updateFormProgress();
-                    
-                } catch (e) {
-                    console.warn('加载草稿失败:', e);
-                }
-            }
-        }
-        
-        function handleSaveDraft() {
-            saveToLocalStorage();
-            alert('💾 草稿已保存！即使关闭页面，数据也不会丢失。');
-        }
-        
-        // 表单进度
-        function updateFormProgress() {
-            const requiredFields = document.querySelectorAll('input[required]');
-            const filledFields = Array.from(requiredFields).filter(field => field.value.trim() !== '').length;
-            const progress = Math.min(100, (filledFields / requiredFields.length) * 100);
-            
-            document.getElementById('form-progress').style.width = progress + '%';
-        }
-        
-        // 输入验证
-        function validateInput(input) {
-            const value = input.value.trim();
-            const isValid = value !== '' && !isNaN(value) && Number(value) >= 0;
-            
-            input.classList.toggle('valid', isValid);
-            input.classList.toggle('invalid', !isValid && value !== '');
-        }
+        // 绑定表单提交事件
+        document.getElementById('sleepForm').addEventListener('submit', submitForm);
     </script>
 </body>
 </html>
