@@ -15,6 +15,9 @@ module.exports = async (req, res) => {
     const https = require('https');
     const body = req.body;
     const GITEE_TOKEN = process.env.GITEE_TOKEN;
+    
+    console.log('GITEE_TOKEN exists:', !!GITEE_TOKEN);
+    console.log('Request body:', JSON.stringify(body));
 
     const requiredFields = ['date', 'sleepDuration', 'awakePercentage', 'remSleep', 
                            'lightSleep', 'deepSleep', 'awake5minCount', 'restingHeartRate',
@@ -29,6 +32,9 @@ module.exports = async (req, res) => {
     const fileContent = JSON.stringify(body, null, 2);
     const filePath = `memory/fitness/sleep_inputs/sleep_${body.date.replace(/-/g, '')}.json`;
     
+    console.log('File path:', filePath);
+    console.log('File content length:', fileContent.length);
+    
     const data = {
       access_token: GITEE_TOKEN,
       content: Buffer.from(fileContent).toString('base64'),
@@ -39,6 +45,8 @@ module.exports = async (req, res) => {
     // 创建文件
     const result = await new Promise((resolve, reject) => {
       const postData = JSON.stringify(data);
+      console.log('Request data length:', postData.length);
+      
       const options = {
         hostname: 'gitee.com',
         path: `/api/v5/repos/shws2011/dimi/contents/${encodeURIComponent(filePath)}`,
@@ -53,11 +61,16 @@ module.exports = async (req, res) => {
         let responseData = '';
         response.on('data', (chunk) => responseData += chunk);
         response.on('end', () => {
+          console.log('Gitee response status:', response.statusCode);
+          console.log('Gitee response data:', responseData);
           resolve({ statusCode: response.statusCode, data: responseData });
         });
       });
     
-      request.on('error', reject);
+      request.on('error', (err) => {
+        console.error('Request error:', err);
+        reject(err);
+      });
       request.write(postData);
       request.end();
     });
@@ -65,6 +78,7 @@ module.exports = async (req, res) => {
     if (result.statusCode === 201) {
       return res.status(200).json({ success: true, message: '数据提交成功' });
     } else if (result.statusCode === 422) {
+      console.log('File exists, updating...');
       // 文件已存在，更新
       const getResult = await new Promise((resolve, reject) => {
         const options = {
@@ -96,7 +110,7 @@ module.exports = async (req, res) => {
         const request = https.request(options, (response) => {
           let responseData = '';
           response.on('data', (chunk) => responseData += chunk);
-          response.on('end', () => resolve({ statusCode: response.statusCode }));
+          response.on('end', () => resolve({ statusCode: response.statusCode, data: responseData }));
         });
         request.on('error', reject);
         request.write(postData);
@@ -105,10 +119,12 @@ module.exports = async (req, res) => {
     
       if (updateResult.statusCode === 200) {
         return res.status(200).json({ success: true, message: '数据更新成功' });
+      } else {
+        throw new Error(`Update failed: ${updateResult.statusCode} - ${updateResult.data}`);
       }
     }
     
-    throw new Error(`Gitee API error: ${result.statusCode}`);
+    throw new Error(`Gitee API error: ${result.statusCode} - ${result.data}`);
 
   } catch (error) {
     console.error('Error:', error);
