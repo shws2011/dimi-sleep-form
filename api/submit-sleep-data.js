@@ -75,11 +75,17 @@ module.exports = async (req, res) => {
       request.end();
     });
     
+    // 成功创建
     if (result.statusCode === 201) {
       return res.status(200).json({ success: true, message: '数据提交成功' });
-    } else if (result.statusCode === 422) {
-      console.log('File exists, updating...');
-      // 文件已存在，更新
+    }
+    
+    // 检查是否是因为文件已存在（400或422都可能）
+    const responseObj = JSON.parse(result.data);
+    if (result.statusCode === 400 && responseObj.message && responseObj.message.includes('已存在')) {
+      console.log('File exists (400), updating...');
+      
+      // 获取文件SHA
       const getResult = await new Promise((resolve, reject) => {
         const options = {
           hostname: 'gitee.com',
@@ -89,12 +95,20 @@ module.exports = async (req, res) => {
         const request = https.request(options, (response) => {
           let data = '';
           response.on('data', (chunk) => data += chunk);
-          response.on('end', () => resolve(JSON.parse(data)));
+          response.on('end', () => {
+            console.log('Get file response:', response.statusCode);
+            if (response.statusCode === 200) {
+              resolve(JSON.parse(data));
+            } else {
+              reject(new Error(`Failed to get file: ${data}`));
+            }
+          });
         });
         request.on('error', reject);
         request.end();
       });
-    
+      
+      // 更新文件
       data.sha = getResult.sha;
       const updateResult = await new Promise((resolve, reject) => {
         const postData = JSON.stringify(data);
@@ -110,13 +124,16 @@ module.exports = async (req, res) => {
         const request = https.request(options, (response) => {
           let responseData = '';
           response.on('data', (chunk) => responseData += chunk);
-          response.on('end', () => resolve({ statusCode: response.statusCode, data: responseData }));
+          response.on('end', () => {
+            console.log('Update response:', response.statusCode, responseData);
+            resolve({ statusCode: response.statusCode, data: responseData });
+          });
         });
         request.on('error', reject);
         request.write(postData);
         request.end();
       });
-    
+      
       if (updateResult.statusCode === 200) {
         return res.status(200).json({ success: true, message: '数据更新成功' });
       } else {
@@ -124,6 +141,7 @@ module.exports = async (req, res) => {
       }
     }
     
+    // 其他错误
     throw new Error(`Gitee API error: ${result.statusCode} - ${result.data}`);
 
   } catch (error) {
