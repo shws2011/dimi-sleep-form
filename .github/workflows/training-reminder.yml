@@ -3,7 +3,7 @@ name: Training Reminder
 on:
   schedule:
     # 工作日11:00 = UTC 3:00 (周一至周五)
-    - cron: '0 3 * * 1-5'
+    - cron: '0 3 * * 1,2,3,4,5'
     # 周六9:00 = UTC 1:00
     - cron: '0 1 * * 6'
   workflow_dispatch:
@@ -12,18 +12,21 @@ jobs:
   send-training-reminder:
     runs-on: ubuntu-latest
     steps:
-      - name: Get current date and weekday
-        id: date
-        run: |
-          echo "date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
-          echo "weekday=$(date +%u)" >> $GITHUB_OUTPUT
-
       - name: Send Training Reminder to DingTalk
         run: |
-          WEEKDAY=${{ steps.date.outputs.weekday }}
-          DATE=${{ steps.date.outputs.date }}
+          # 获取当前UTC时间的小时和星期几
+          HOUR=$(date -u +%H)
+          WEEKDAY=$(date -u +%u)
+          DATE=$(date -u +%Y-%m-%d)
           
-          # 根据星期几设置不同的训练内容
+          echo "Current UTC hour: $HOUR"
+          echo "Current UTC weekday: $WEEKDAY"
+          echo "Current date: $DATE"
+          
+          # 根据触发时间判断应该发送哪天的内容
+          # 如果是UTC 3:00（北京时间11:00），发送当天内容
+          # 如果是UTC 1:00（北京时间9:00），发送当天内容（周六）
+          
           if [ "$WEEKDAY" = "1" ]; then
             TRAINING="周一：Back Squat + OVERTAKE"
           elif [ "$WEEKDAY" = "2" ]; then
