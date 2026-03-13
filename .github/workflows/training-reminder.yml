@@ -1,0 +1,52 @@
+name: Training Reminder
+
+on:
+  schedule:
+    # 工作日11:00 = UTC 3:00 (周一至周五)
+    - cron: '0 3 * * 1-5'
+    # 周六9:00 = UTC 1:00
+    - cron: '0 1 * * 6'
+  workflow_dispatch:
+
+jobs:
+  send-training-reminder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get current date and weekday
+        id: date
+        run: |
+          echo "date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
+          echo "weekday=$(date +%u)" >> $GITHUB_OUTPUT
+
+      - name: Send Training Reminder to DingTalk
+        run: |
+          WEEKDAY=${{ steps.date.outputs.weekday }}
+          DATE=${{ steps.date.outputs.date }}
+          
+          # 根据星期几设置不同的训练内容
+          if [ "$WEEKDAY" = "1" ]; then
+            TRAINING="周一：Back Squat + OVERTAKE"
+          elif [ "$WEEKDAY" = "2" ]; then
+            TRAINING="周二：Bench Press + DRS"
+          elif [ "$WEEKDAY" = "3" ]; then
+            TRAINING="周三：Squat Body Strength + Clean Pulls"
+          elif [ "$WEEKDAY" = "4" ]; then
+            TRAINING="周四：Push Press + Safety Car"
+          elif [ "$WEEKDAY" = "5" ]; then
+            TRAINING="周五：Hang Squat Snatch + Pole Position"
+          elif [ "$WEEKDAY" = "6" ]; then
+            TRAINING="周六：THE OPEN 2026"
+          else
+            TRAINING="周日：休息"
+          fi
+          
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"msgtype\": \"markdown\",
+              \"markdown\": {
+                \"title\": \"DIMI训练提醒 - $DATE\",
+                \"text\": \"## 🏋️ DIMI训练提醒 ($DATE)\\n\\n### 📋 今日训练\\n$TRAINING\\n\\n### 💡 温馨提示\\n1. 记得查看睡眠数据分析\\n2. 根据体感调整训练强度\\n3. 训练后及时反馈\\n\\n> 💪 加油！\\n\\n> 📊 查看睡眠数据：https://dimi-sleep-form.vercel.app/\"
+              }
+            }" \
+            https://oapi.dingtalk.com/robot/send?access_token=238cbb8ff13ea9a2ac8567a4e2c185303804906107d9bc73bb209e5584c211c9
