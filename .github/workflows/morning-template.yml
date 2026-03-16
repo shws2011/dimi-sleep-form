@@ -2,8 +2,8 @@ name: Morning Template
 
 on:
   schedule:
-    # 北京时间9:00 = UTC 1:00
-    - cron: '0 1 * * *'
+    # 北京时间9:00 = UTC 1:00（提前2小时以补偿延迟，实际约9:00-11:00收到）
+    - cron: '0 23 * * *'
   workflow_dispatch: # 允许手动触发
 
 jobs:

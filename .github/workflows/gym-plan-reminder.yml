@@ -1,0 +1,24 @@
+name: Gym Plan Reminder
+
+on:
+  schedule:
+    # 北京时间周一9:00 = UTC 1:00（提前2小时以补偿延迟，实际约9:00-11:00收到）
+    - cron: '0 23 * * 0'
+  workflow_dispatch:
+
+jobs:
+  send-gym-plan-reminder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Gym Plan Reminder to DingTalk
+        run: |
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -d '{
+              "msgtype": "markdown",
+              "markdown": {
+                "title": "本周场馆计划提醒",
+                "text": "## 🏋️ 本周场馆计划提醒\n\n### 📋 请发送本周场馆计划\n\n请通过TRAE发送本周场馆训练计划给我，包括：\n- 每日主课内容\n- 执行要点\n- 加练安排\n- 恢复重点\n\n> 💡 收到后我将整合到训练系统中\n\n> 📅 时间：每周一上午"
+              }
+            }' \
+            https://oapi.dingtalk.com/robot/send?access_token=238cbb8ff13ea92ac8567a4e2c185303804906107d9bc73bb209e5584c211c9
