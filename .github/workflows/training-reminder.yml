@@ -12,44 +12,36 @@ jobs:
   send-training-reminder:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Generate training reminder message
+        id: generate
+        run: |
+          MESSAGE=$(node scripts/generate-training-reminder.js | grep -A 1000 '=== MESSAGE START ===' | grep -B 1000 '=== MESSAGE END ===' | head -n -1 | tail -n +2)
+          # 转义特殊字符用于JSON
+          MESSAGE_ESCAPED=$(echo "$MESSAGE" | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
+          echo "message=$MESSAGE_ESCAPED" >> $GITHUB_OUTPUT
+          echo "Generated message:"
+          echo "$MESSAGE"
+
       - name: Send Training Reminder to DingTalk
         run: |
-          # 获取当前UTC时间的小时和星期几
-          HOUR=$(date -u +%H)
-          WEEKDAY=$(date -u +%u)
-          DATE=$(date -u +%Y-%m-%d)
-          
-          echo "Current UTC hour: $HOUR"
-          echo "Current UTC weekday: $WEEKDAY"
-          echo "Current date: $DATE"
-          
-          # 根据触发时间判断应该发送哪天的内容
-          # 如果是UTC 3:00（北京时间11:00），发送当天内容
-          # 如果是UTC 1:00（北京时间9:00），发送当天内容（周六）
-          
-          if [ "$WEEKDAY" = "1" ]; then
-            TRAINING="周一：Back Squat + OVERTAKE"
-          elif [ "$WEEKDAY" = "2" ]; then
-            TRAINING="周二：Bench Press + DRS"
-          elif [ "$WEEKDAY" = "3" ]; then
-            TRAINING="周三：Squat Body Strength + Clean Pulls"
-          elif [ "$WEEKDAY" = "4" ]; then
-            TRAINING="周四：Push Press + Safety Car"
-          elif [ "$WEEKDAY" = "5" ]; then
-            TRAINING="周五：Hang Squat Snatch + Pole Position"
-          elif [ "$WEEKDAY" = "6" ]; then
-            TRAINING="周六：THE OPEN 2026"
-          else
-            TRAINING="周日：休息"
-          fi
-          
+          MESSAGE="${{ steps.generate.outputs.message }}"
           curl -X POST \
             -H "Content-Type: application/json" \
             -d "{
               \"msgtype\": \"markdown\",
               \"markdown\": {
-                \"title\": \"DIMI训练提醒 - $DATE\",
-                \"text\": \"## 🏋️ DIMI训练提醒 ($DATE)\\n\\n### 📋 今日训练\\n$TRAINING\\n\\n### 💡 温馨提示\\n1. 记得查看睡眠数据分析\\n2. 根据体感调整训练强度\\n3. 训练后及时反馈\\n\\n> 💪 加油！\\n\\n> 📊 查看睡眠数据：https://dimi-sleep-form.vercel.app/\"
+                \"title\": \"DIMI训练提醒\",
+                \"text\": \"$MESSAGE\"
               }
             }" \
             https://oapi.dingtalk.com/robot/send?access_token=238cbb8ff13ea9a2ac8567a4e2c185303804906107d9bc73bb209e5584c211c9
