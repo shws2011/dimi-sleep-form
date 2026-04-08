@@ -9,14 +9,16 @@ on:
 jobs:
   send:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
       - run: pip install requests
       - run: |
           python << 'EOF'
-          import requests, base64, datetime
+          import requests, base64, datetime, json
           
           token = "ed4425ff9eae674d02248852bcb8fd63"  # 替换为真实token
           webhook = "https://oapi.dingtalk.com/robot/send?access_token=238cbb8ff13ea9a2ac8567a4e2c185303804906107d9bc73bb209e5584c211c9"
@@ -27,6 +29,15 @@ jobs:
           weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
           today_cn = weekdays[weekday]
           
+          # 读取1RM数据
+          url = "https://gitee.com/api/v5/repos/shws2011/dimi/contents/memory/fitness/training_data/1rm_data.json"
+          r = requests.get(url, headers={"Authorization": f"token {token}"})
+          if r.status_code == 200:
+              content = base64.b64decode(r.json()["content"]).decode("utf-8")
+              rm_data = json.loads(content)["1rm_data"]
+          else:
+              rm_data = {}
+          
           # 读取周计划
           url = f"https://gitee.com/api/v5/repos/shws2011/dimi/contents/memory/fitness/weekly/{today.year}-W{week_num}.md"
           r = requests.get(url, headers={"Authorization": f"token {token}"})
@@ -34,16 +45,82 @@ jobs:
           if r.status_code == 200:
               content = base64.b64decode(r.json()["content"]).decode("utf-8")
               lines = content.split("\n")
-              plan = {"main": ""}
-              in_today = False
+              plan = {"title": "", "strength": [], "wod": [], "alternate": [], "extra": "", "recovery": ""}
+              section = "title"
+              
               for line in lines:
+                  line = line.strip()
                   if f"## {today_cn}" in line:
-                      in_today = True
-                  elif in_today and line.startswith("## "):
+                      section = "strength"
+                      plan["title"] = line.replace("##", "").strip()
+                  elif line.startswith("## ") and today_cn not in line:
                       break
-                  elif in_today and "WOD:" in line:
-                      plan["main"] = line
-              message = f"DIMI训练提醒 ({today.strftime('%Y-%m-%d')} {today_cn})\n\n主课：{plan['main'] or '无'}\n\n加油！"
+                  elif section == "strength" and "WOD:" in line:
+                      section = "wod"
+                      plan["wod"].append(line)
+                  elif section == "wod" and "Level" in line:
+                      section = "alternate"
+                      plan["alternate"].append(line)
+                  elif section == "alternate" and "加练" in line:
+                      section = "extra"
+                  elif section == "extra" and "恢复" in line:
+                      section = "recovery"
+                  elif section == "strength" and line:
+                      # 计算1RM
+                      if "1RM" in line:
+                          if "Front Squat" in line and "front_squat" in rm_data:
+                              rm = rm_data["front_squat"]
+                              line = line.replace("1RM", f"{rm}kg")
+                          elif "Bench Press" in line and "bench_press" in rm_data:
+                              rm = rm_data["bench_press"]
+                              line = line.replace("1RM", f"{rm}kg")
+                          elif "Clean & Jerk" in line and "clean_jerk" in rm_data:
+                              rm = rm_data["clean_jerk"]
+                              line = line.replace("1RM", f"{rm}kg")
+                          elif "Push Press" in line and "push_press" in rm_data:
+                              rm = rm_data["push_press"]
+                              line = line.replace("1RM", f"{rm}kg")
+                          elif "Snatch" in line and "snatch" in rm_data:
+                              rm = rm_data["snatch"]
+                              line = line.replace("1RM", f"{rm}kg")
+                      plan["strength"].append(line)
+                  elif section == "wod" and line:
+                      plan["wod"].append(line)
+                  elif section == "alternate" and line:
+                      plan["alternate"].append(line)
+                  elif section == "extra" and "主动恢复" in line:
+                      plan["extra"] = line
+                  elif section == "recovery" and line:
+                      plan["recovery"] = line
+              
+              # 生成详细消息
+              message = f"DIMI训练提醒 ({today.strftime('%Y-%m-%d')} {plan['title']})\n\n"
+              
+              if plan["strength"]:
+                  message += "### 1. 力量训练\n"
+                  for item in plan["strength"]:
+                      message += f"{item}\n"
+                  message += "\n"
+              
+              if plan["wod"]:
+                  message += "### 2. WOD\n"
+                  for item in plan["wod"]:
+                      message += f"{item}\n"
+                  message += "\n"
+              
+              if plan["alternate"]:
+                  message += "### 3. 备选方案\n"
+                  for item in plan["alternate"]:
+                      message += f"{item}\n"
+                  message += "\n"
+              
+              if plan["extra"]:
+                  message += f"### 4. 课后加练\n{plan['extra']}\n\n"
+              
+              if plan["recovery"]:
+                  message += f"### 5. 恢复重点\n{plan['recovery']}\n\n"
+              
+              message += "💪 加油！"
           else:
               message = "本周训练计划未设置，请发送本周计划。"
           
