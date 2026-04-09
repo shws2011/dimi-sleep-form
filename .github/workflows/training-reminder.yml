@@ -88,125 +88,187 @@ jobs:
                   print(f"响应: {response.text[:200]}")
                   sys.exit(1)
           except Exception as e:
-              print(f"✗ 获取计划文件失败: {e}")
+              print(f"✗ 获取计划文件异常: {e}")
               sys.exit(1)
 
-          # 解析今日日期和星期
-          today_cn = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][today.weekday() + 1]
-
-          # 解析训练计划
-          venue_plan = ""
-          additional_practice = ""
-          recovery_focus = ""
-          practice_notes = ""
+          # 解析今日计划
+          chinese_weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+          target_weekday_cn = chinese_weekdays[today.weekday()]
+          print(f"✓ 今日: {target_weekday_cn}")
 
           lines = content.split('\n')
-          in_venue = False
-          in_additional = False
-          in_recovery = False
-          in_notes = False
+          daily_content = []
+          in_target_section = False
 
           for line in lines:
-              line = line.strip()
-              if line.startswith(f"### {today_cn}"):
-                  in_venue = True
-                  in_additional = False
-                  in_recovery = False
-                  in_notes = False
-              elif line.startswith("### 课后加练") and in_venue:
-                  in_venue = False
-                  in_additional = True
-              elif line.startswith("### 恢复重点") and in_additional:
-                  in_additional = False
-                  in_recovery = True
-              elif line.startswith("### 练习要点") and in_recovery:
-                  in_recovery = False
-                  in_notes = True
-              elif line.startswith("### ") and not in_venue and not in_additional and not in_recovery and not in_notes:
+              line_stripped = line.strip()
+              if f"## {target_weekday_cn}" in line_stripped:
+                  in_target_section = True
+                  continue
+              
+              if in_target_section and line_stripped.startswith('## ') and target_weekday_cn not in line_stripped:
                   break
-              elif in_venue and line:
-                  venue_plan += line + "\n"
-              elif in_additional and line:
-                  additional_practice += line + "\n"
-              elif in_recovery and line:
-                  recovery_focus += line + "\n"
-              elif in_notes and line:
-                  practice_notes += line + "\n"
+              
+              if in_target_section:
+                  daily_content.append(line)
 
-          # 处理1RM百分比计算
-          def calculate_weight(exercise, percentage):
-              exercise_map = {
-                  "back squat": "back_squat",
-                  "bench press": "bench_press",
-                  "clean & jerk": "clean_jerk",
-                  "push press": "push_press",
-                  "snatch": "snatch",
-                  "squat clean": "squat_clean",
-                  "front squat": "front_squat",
-                  "deadlift": "deadlift"
+          if not daily_content:
+              print(f"✗ 未找到今日训练计划 ({target_weekday_cn})")
+              simple_message = f"🏋️ DIMI训练提醒 ({today.strftime('%Y-%m-%d')} {target_weekday_cn})\n\n今日训练计划未找到，请检查周计划文件。\n\n💪 加油！"
+              payload = {
+                  "msgtype": "markdown",
+                  "markdown": {
+                      "title": "训练提醒",
+                      "text": simple_message
+                  }
               }
-              for key, value in exercise_map.items():
-                  if key in exercise.lower():
-                      if value in RM_DATA:
-                          rm = RM_DATA[value]
-                          min_pct, max_pct = re.findall(r'(\d+)-(\d+)%', percentage)[0]
-                          min_weight = round(float(rm) * float(min_pct) / 100 / 2.5) * 2.5
-                          max_weight = round(float(rm) * float(max_pct) / 100 / 2.5) * 2.5
-                          return f"{percentage} ({min_weight}-{max_weight}kg)"
-              return percentage
+              
+              try:
+                  resp = requests.post(dingtalk_webhook, json=payload, timeout=10)
+                  if resp.status_code == 200:
+                      print("✓ 已发送简单提醒消息")
+                  else:
+                      print(f"✗ 发送失败: HTTP {resp.status_code}")
+              except Exception as e:
+                  print(f"✗ 发送消息异常: {e}")
+              
+              sys.exit(0)
 
-          # 计算重量
-          if venue_plan:
-              venue_plan_lines = venue_plan.split('\n')
-              for i, line in enumerate(venue_plan_lines):
-                  if "%" in line and ("Weight" in line or "weight" in line):
-                      # 提取动作名称和百分比
-                      parts = line.split(',')
-                      for j, part in enumerate(parts):
-                          if "Weight" in part or "weight" in part:
-                              exercise = ",".join(parts[:j]).strip()
-                              percentage = re.search(r'(\d+-\d+)%', part).group(1) + "%"
-                              new_part = part.replace(percentage, calculate_weight(exercise, percentage))
-                              parts[j] = new_part
-                              venue_plan_lines[i] = ",".join(parts)
-              venue_plan = "\n".join(venue_plan_lines)
+          plan_text = '\n'.join(daily_content)
+          print(f"✓ 提取到计划内容: {len(plan_text)}字符")
+
+          # 提取各部分
+          def extract_section(title, text):
+              lines = text.split('\n')
+              section_lines = []
+              in_section = False
+              
+              for line in lines:
+                  line_stripped = line.strip()
+                  if f"### {title}" in line_stripped:
+                      in_section = True
+                      continue
+                  
+                  if in_section and line_stripped.startswith('### '):
+                      break
+                  
+                  if in_section:
+                      section_lines.append(line)
+              
+              return '\n'.join(section_lines).strip()
+
+          gym_plan = extract_section("场馆计划", plan_text)
+          extra_plan = extract_section("课后加练", plan_text)
+          recovery_plan = extract_section("恢复重点", plan_text)
+          notes_plan = extract_section("练习要点", plan_text)
+
+          print(f"✓ 解析成功: 场馆计划({len(gym_plan)}字符), 课后加练({len(extra_plan)}字符), 恢复重点({len(recovery_plan)}字符)")
+
+          # 计算1RM百分比
+          def calculate_weights(text):
+              if not text:
+                  return text
+              
+              rm_map = {
+                  'front squat': 'front_squat',
+                  'bench press': 'bench_press',
+                  'clean & jerk': 'clean_jerk',
+                  'push press': 'push_press',
+                  'snatch': 'snatch',
+                  'squat clean': 'squat_clean',
+                  'back squat': 'back_squat',
+                  'deadlift': 'deadlift'
+              }
+              
+              # 匹配多种格式
+              patterns = [
+                  r'(\d+)-?(\d+)?%\s*1RM',
+                  r'(\d+)%1RM'
+              ]
+              
+              def replace(match):
+                  if len(match.groups()) == 2:
+                      min_pct = match.group(1)
+                      max_pct = match.group(2) or min_pct
+                      
+                      # 尝试找到对应的动作
+                      line = match.string
+                      exercise_name = ""
+                      for key in rm_map.keys():
+                          if key in line.lower():
+                              exercise_name = key
+                              break
+                      
+                      if exercise_name:
+                          exercise_key = rm_map[exercise_name]
+                          if exercise_key in RM_DATA:
+                              rm = RM_DATA[exercise_key]
+                              min_weight = round(float(rm) * float(min_pct) / 100 / 2.5) * 2.5
+                              max_weight = round(float(rm) * float(max_pct) / 100 / 2.5) * 2.5
+                              return f"{min_pct}-{max_pct}% 1RM ({min_weight}-{max_weight}kg)"
+                      return match.group(0)
+                  elif len(match.groups()) == 1:
+                      pct = match.group(1)
+                      
+                      # 尝试找到对应的动作
+                      line = match.string
+                      exercise_name = ""
+                      for key in rm_map.keys():
+                          if key in line.lower():
+                              exercise_name = key
+                              break
+                      
+                      if exercise_name:
+                          exercise_key = rm_map[exercise_name]
+                          if exercise_key in RM_DATA:
+                              rm = RM_DATA[exercise_key]
+                              weight = round(float(rm) * float(pct) / 100 / 2.5) * 2.5
+                              return f"{pct}% 1RM ({weight}kg)"
+                      return match.group(0)
+                  return match.group(0)
+              
+              result = text
+              for pattern in patterns:
+                  result = re.sub(pattern, replace, result, flags=re.IGNORECASE)
+              
+              return result
+
+          # 处理场馆计划中的1RM百分比
+          if gym_plan:
+              gym_plan = calculate_weights(gym_plan)
 
           # 生成消息
           lines_msg = []
-          lines_msg.append(f"🏋️ DIMI训练提醒 ({today.strftime('%Y-%m-%d')} {today_cn})")
+          lines_msg.append(f"🏋️ DIMI训练提醒 ({today.strftime('%Y-%m-%d')} {target_weekday_cn})")
           lines_msg.append("")
           lines_msg.append("### 📋 今日训练计划")
           lines_msg.append("")
 
-          if venue_plan:
+          if gym_plan:
               lines_msg.append("**场馆计划:**")
-              lines_msg.append(venue_plan.strip())
+              lines_msg.append(gym_plan)
               lines_msg.append("")
 
-          if additional_practice:
+          if extra_plan:
               lines_msg.append("**课后加练:**")
-              lines_msg.append(additional_practice.strip())
+              lines_msg.append(extra_plan)
               lines_msg.append("")
 
-          if recovery_focus:
+          if recovery_plan:
               lines_msg.append("**恢复重点:**")
-              lines_msg.append(recovery_focus.strip())
+              lines_msg.append(recovery_plan)
               lines_msg.append("")
 
-          if practice_notes:
+          if notes_plan:
               lines_msg.append("**练习要点:**")
-              lines_msg.append(practice_notes.strip())
+              lines_msg.append(notes_plan)
               lines_msg.append("")
 
-          # 添加1RM参考数据
-          lines_msg.append("### 📊 1RM参考数据")
-          for key, value in sorted(RM_DATA.items()):
-              display = key.replace('_', ' ').title()
-              lines_msg.append(f"- {display}: {value}kg")
-          lines_msg.append("")
+          # 不添加1RM参考数据（已删除）
           lines_msg.append("💪 加油！")
 
           message = '\n'.join(lines_msg)
+          print(f"✓ 消息生成完成，长度: {len(message)}字符")
 
           # 发送钉钉消息
           headers = {"Content-Type": "application/json"}
@@ -224,7 +286,6 @@ jobs:
                   result = response.json()
                   if result.get("errcode") == 0:
                       print("✅ 训练提醒发送成功！")
-                      print(f"消息长度: {len(message)}字符")
                   else:
                       print(f"✗ 钉钉发送失败: {result.get('errmsg')}")
               else:
