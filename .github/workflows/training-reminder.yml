@@ -9,6 +9,7 @@ on:
 env:
   GITEE_TOKEN: 'ed4425ff9eae674d02248852bcb8fd63'
   DINGTALK_WEBHOOK: 'https://oapi.dingtalk.com/robot/send?access_token=238cbb8ff13ea9a2ac8567a4e2c185303804906107d9bc73bb209e5584c211c9'
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   send-reminder:
@@ -16,8 +17,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          node-version: '24'
 
       - name: Set up Python
         uses: actions/setup-python@v5
