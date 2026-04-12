@@ -17,7 +17,7 @@ jobs:
             -d '{
               "msgtype": "text",
               "text": {
-                "content": "🌅 睡眠数据收集\n\n请复制以下模板并填写今日的睡眠数据，然后发送给我：\n\n睡眠数据\n日期: '"$(date +%Y-%m-%d)"'\n静息心率: \nHRV值: \n睡眠时间: \n清醒: \nREM: \n浅睡: \n深睡: \n压力: \n体力恢复: \n主观疲劳感: \n体重: \n体脂率: \n备注: "
+                "content": "🌅 睡眠数据收集\n\n请复制以下模板并填写今日的睡眠数据，然后发送给我：\n\n睡眠数据\n日期: '"$(date +%Y-%m-%d)"'\n睡眠时间: \n清醒: \nREM: \n浅睡: \n深睡: \nHRV值: \n体力恢复: \n静息心率: \n压力: \n主观疲劳感: \n体重: \n体脂率: \n备注: "
               }
             }' \
             "https://oapi.dingtalk.com/robot/send?access_token=238cbb8ff13ea9a2ac8567a4e2c185303804906107d9bc73bb209e5584c211c9"
