@@ -111,7 +111,7 @@ jobs:
 
           for line in lines:
               line_stripped = line.strip()
-              if f"## {target_weekday_cn}" in line_stripped:
+              if target_weekday_cn in line_stripped and line_stripped.startswith('## '):
                   in_target_section = True
                   continue
               
