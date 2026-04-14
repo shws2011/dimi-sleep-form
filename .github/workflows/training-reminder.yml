@@ -1,5 +1,4 @@
 name: Training Reminder
-
 on:
   schedule:
     - cron: '0 1 * * 1-5'  # 工作日 UTC 01:00（北京时间09:00）
@@ -32,30 +31,25 @@ jobs:
           DINGTALK_WEBHOOK: ${{ env.DINGTALK_WEBHOOK }}
         run: |
           python << 'EOF'
-          import os, sys, json, re, requests, base64
+          import os
+          import sys
+          import json
+          import re
+          import requests
+          import base64
           from datetime import datetime
 
-          # 从JSON文件读取1RM数据
-          RM_DATA = {}
-          try:
-              with open('memory/fitness/training_data/1rm_data.json', 'r', encoding='utf-8') as f:
-                  rm_data = json.load(f)
-                  RM_DATA = rm_data.get("1rm_data", {})
-                  print(f"✓ 从JSON文件加载1RM数据: {list(RM_DATA.keys())}")
-          except Exception as e:
-              print(f"⚠️ 无法从JSON文件读取1RM数据: {e}")
-              # 使用默认值
-              RM_DATA = {
-                  "front_squat": 90,
-                  "bench_press": 80,
-                  "clean_jerk": 50,
-                  "push_press": 55,
-                  "snatch": 50,
-                  "squat_clean": 70,
-                  "back_squat": 110,
-                  "deadlift": 120
-              }
-              print("✓ 使用默认1RM数据")
+          # 1RM数据
+          RM_DATA = {
+              "front_squat": 90,
+              "bench_press": 80,
+              "clean_jerk": 50,
+              "push_press": 55,
+              "snatch": 50,
+              "squat_clean": 70,
+              "back_squat": 110,
+              "deadlift": 120
+          }
 
           # 检查必要的环境变量
           token = os.environ.get("GITEE_TOKEN")
@@ -74,22 +68,37 @@ jobs:
           year, week_num, _ = today.isocalendar()
           file_path = f"memory/fitness/weekly/{year}-W{week_num:02d}.md"
 
-          url = f"https://gitee.com/api/v5/repos/shws2011/dimi/contents/{file_path}"
-          params = {"access_token": token, "ref": "main"}
+          # 优先读取本地文件
+          content = None
+          if os.path.exists(file_path):
+              try:
+                  with open(file_path, 'r', encoding='utf-8') as f:
+                      content = f.read()
+                  print(f"✓ 成功读取本地训练计划文件: {file_path}")
+              except Exception as e:
+                  print(f"⚠️ 读取本地文件异常: {e}")
 
-          try:
-              response = requests.get(url, params=params, timeout=10)
-              if response.status_code == 200:
-                  data = response.json()
-                  content = base64.b64decode(data.get("content", "")).decode('utf-8')
-                  print(f"✓ 成功获取训练计划文件: {file_path}")
-              else:
-                  print(f"✗ 无法获取计划文件: HTTP {response.status_code}")
-                  print(f"响应: {response.text[:200]}")
+          # 如果本地文件不存在，尝试从Gitee获取
+          if not content:
+              url = f"https://gitee.com/api/v5/repos/shws2011/dimi/contents/{file_path}"
+              params = {"access_token": token, "ref": "main"}
+
+              try:
+                  response = requests.get(url, params=params, timeout=10)
+                  if response.status_code == 200:
+                      data = response.json()
+                      if isinstance(data, dict) and "content" in data:
+                          content = base64.b64decode(data["content"]).decode('utf-8')
+                          print(f"✓ 成功从Gitee获取训练计划文件: {file_path}")
+                      else:
+                          print("✗ Gitee返回的数据格式不正确")
+                          sys.exit(1)
+                  else:
+                      print(f"✗ 无法获取计划文件: HTTP {response.status_code}")
+                      sys.exit(1)
+              except Exception as e:
+                  print(f"✗ 获取计划文件异常: {e}")
                   sys.exit(1)
-          except Exception as e:
-              print(f"✗ 获取计划文件异常: {e}")
-              sys.exit(1)
 
           # 解析今日计划
           chinese_weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
@@ -163,6 +172,10 @@ jobs:
           notes_plan = extract_section("练习要点", plan_text)
 
           print(f"✓ 解析成功: 场馆计划({len(gym_plan)}字符), 课后加练({len(extra_plan)}字符), 恢复重点({len(recovery_plan)}字符)")
+
+          if not gym_plan:
+              print("✗ 未找到场馆计划")
+              sys.exit(1)
 
           # 计算1RM百分比
           def calculate_weights(text):
@@ -242,7 +255,7 @@ jobs:
           if gym_plan:
               gym_plan = calculate_weights(gym_plan)
 
-          # 生成消息
+          # 构建消息
           lines_msg = []
           lines_msg.append(f"🏋️ DIMI训练提醒 ({today.strftime('%Y-%m-%d')} {target_weekday_cn})")
           lines_msg.append("")
@@ -269,6 +282,30 @@ jobs:
               lines_msg.append(notes_plan)
               lines_msg.append("")
 
+          # 添加健康状态调整
+          try:
+              import csv
+              health_data_path = "memory/fitness/health_data.csv"
+              if os.path.exists(health_data_path):
+                  with open(health_data_path, 'r', encoding='utf-8-sig') as f:
+                      reader = csv.reader(f)
+                      rows = list(reader)
+                      if len(rows) > 1:
+                          latest = rows[-1]
+                          if len(latest) >= 8:
+                              physical_recovery = int(latest[7])
+                              
+                              lines_msg.append("### 📊 健康状态调整")
+                              if physical_recovery < 50:
+                                  lines_msg.append("⚠️ 体力恢复不足，建议降低强度20-30%")
+                              elif physical_recovery < 70:
+                                  lines_msg.append("⚡ 体力恢复一般，建议降低强度10-20%")
+                              else:
+                                  lines_msg.append("✅ 体力恢复良好，可按计划执行")
+                              lines_msg.append("")
+          except Exception as e:
+              print(f"⚠️ 读取健康数据异常: {e}")
+
           # 不添加1RM参考数据（已删除）
           lines_msg.append("💪 加油！")
 
@@ -293,8 +330,10 @@ jobs:
                       print("✅ 训练提醒发送成功！")
                   else:
                       print(f"✗ 钉钉发送失败: {result.get('errmsg')}")
+                      sys.exit(1)
               else:
                   print(f"✗ 钉钉发送失败: HTTP {response.status_code}")
+                  sys.exit(1)
           except Exception as e:
               print(f"✗ 发送消息失败: {e}")
               sys.exit(1)
