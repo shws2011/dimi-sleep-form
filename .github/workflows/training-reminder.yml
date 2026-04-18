@@ -66,39 +66,91 @@ jobs:
           # 获取本周训练计划文件
           today = datetime.now()
           year, week_num, _ = today.isocalendar()
-          file_path = f"memory/fitness/weekly/{year}-W{week_num:02d}.md"
-
-          # 优先读取本地文件
+          file_prefix = f"{year}-W{week_num:02d}"
+          
+          # 查找正确的文件路径
+          file_path = None
           content = None
-          if os.path.exists(file_path):
+          
+          # 1. 先尝试本地查找
+          weekly_dir = "memory/fitness/weekly"
+          if os.path.exists(weekly_dir):
+              try:
+                  files = os.listdir(weekly_dir)
+                  for filename in files:
+                      if filename.startswith(file_prefix) and filename.endswith('.md'):
+                          file_path = os.path.join(weekly_dir, filename)
+                          break
+              except Exception as e:
+                  print(f"⚠️ 读取本地目录异常: {e}")
+          
+          # 2. 如果本地找到了文件，读取它
+          if file_path and os.path.exists(file_path):
               try:
                   with open(file_path, 'r', encoding='utf-8') as f:
                       content = f.read()
                   print(f"✓ 成功读取本地训练计划文件: {file_path}")
               except Exception as e:
                   print(f"⚠️ 读取本地文件异常: {e}")
-
-          # 如果本地文件不存在，尝试从Gitee获取
+                  file_path = None
+          
+          # 3. 如果本地没有找到或读取失败，从Gitee查找
           if not content:
-              url = f"https://gitee.com/api/v5/repos/shws2011/dimi/contents/{file_path}"
+              # 先列出目录内容
+              dir_url = f"https://gitee.com/api/v5/repos/shws2011/dimi/contents/memory/fitness/weekly"
               params = {"access_token": token, "ref": "main"}
-
+              
               try:
-                  response = requests.get(url, params=params, timeout=10)
+                  response = requests.get(dir_url, params=params, timeout=10)
                   if response.status_code == 200:
-                      data = response.json()
-                      if isinstance(data, dict) and "content" in data:
-                          content = base64.b64decode(data["content"]).decode('utf-8')
-                          print(f"✓ 成功从Gitee获取训练计划文件: {file_path}")
-                      else:
-                          print("✗ Gitee返回的数据格式不正确")
-                          sys.exit(1)
-                  else:
-                      print(f"✗ 无法获取计划文件: HTTP {response.status_code}")
-                      sys.exit(1)
+                      dir_contents = response.json()
+                      if isinstance(dir_contents, list):
+                          for item in dir_contents:
+                              if item.get("type") == "file" and item.get("name", "").startswith(file_prefix) and item.get("name", "").endswith('.md'):
+                                  file_path = f"memory/fitness/weekly/{item.get('name')}"
+                                  break
               except Exception as e:
-                  print(f"✗ 获取计划文件异常: {e}")
-                  sys.exit(1)
+                  print(f"⚠️ 列出Gitee目录异常: {e}")
+              
+              # 如果找到了文件，读取它
+              if file_path:
+                  url = f"https://gitee.com/api/v5/repos/shws2011/dimi/contents/{file_path}"
+                  try:
+                      response = requests.get(url, params=params, timeout=10)
+                      if response.status_code == 200:
+                          data = response.json()
+                          if isinstance(data, dict) and "content" in data:
+                              content = base64.b64decode(data["content"]).decode('utf-8')
+                              print(f"✓ 成功从Gitee获取训练计划文件: {file_path}")
+                          else:
+                              print("✗ Gitee返回的数据格式不正确")
+                              sys.exit(1)
+                      else:
+                          print(f"✗ 无法获取计划文件: HTTP {response.status_code}")
+                          sys.exit(1)
+                  except Exception as e:
+                      print(f"✗ 获取计划文件异常: {e}")
+                      sys.exit(1)
+              else:
+                  # 如果找不到任何文件，尝试精确匹配
+                  file_path = f"memory/fitness/weekly/{file_prefix}.md"
+                  url = f"https://gitee.com/api/v5/repos/shws2011/dimi/contents/{file_path}"
+                  try:
+                      response = requests.get(url, params=params, timeout=10)
+                      if response.status_code == 200:
+                          data = response.json()
+                          if isinstance(data, dict) and "content" in data:
+                              content = base64.b64decode(data["content"]).decode('utf-8')
+                              print(f"✓ 成功从Gitee获取训练计划文件: {file_path}")
+                          else:
+                              print("✗ Gitee返回的数据格式不正确")
+                              sys.exit(1)
+                      else:
+                          print(f"✗ 无法获取计划文件: HTTP {response.status_code}")
+                          sys.exit(1)
+                  except Exception as e:
+                      print(f"✗ 获取计划文件异常: {e}")
+                      sys.exit(1)
 
           # 解析今日计划
           chinese_weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
