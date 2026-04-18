@@ -114,10 +114,10 @@ jobs:
               if target_weekday_cn in line_stripped and line_stripped.startswith('## '):
                   in_target_section = True
                   continue
-              
+
               if in_target_section and line_stripped.startswith('## ') and target_weekday_cn not in line_stripped:
                   break
-              
+
               if in_target_section:
                   daily_content.append(line)
 
@@ -131,7 +131,7 @@ jobs:
                       "text": simple_message
                   }
               }
-              
+
               try:
                   resp = requests.post(dingtalk_webhook, json=payload, timeout=10)
                   if resp.status_code == 200:
@@ -140,7 +140,7 @@ jobs:
                       print(f"✗ 发送失败: HTTP {resp.status_code}")
               except Exception as e:
                   print(f"✗ 发送消息异常: {e}")
-              
+
               sys.exit(0)
 
           plan_text = '\n'.join(daily_content)
@@ -151,19 +151,19 @@ jobs:
               lines = text.split('\n')
               section_lines = []
               in_section = False
-              
+
               for line in lines:
                   line_stripped = line.strip()
                   if f"### {title}" in line_stripped:
                       in_section = True
                       continue
-                  
+
                   if in_section and line_stripped.startswith('### '):
                       break
-                  
+
                   if in_section:
                       section_lines.append(line)
-              
+
               return '\n'.join(section_lines).strip()
 
           gym_plan = extract_section("场馆计划", plan_text)
@@ -178,101 +178,116 @@ jobs:
               sys.exit(1)
 
           # 计算1RM百分比
-                     def calculate_weights(text):
-               if not text:
-                   return text
-               
-               rm_map = {
-                   'front squat': 'front_squat',
-                   'bench press': 'bench_press',
-                   'clean & jerk': 'clean_jerk',
-                   'power clean & jerk': 'clean_jerk',
-                   'push press': 'push_press',
-                   'snatch': 'snatch',
-                   'power snatch': 'snatch',
-                   'squat clean': 'squat_clean',
-                   'back squat': 'back_squat',
-                   'deadlift': 'deadlift'
-               }
-               
-               # 找到对应的动作
-               exercise_key = None
-               text_lower = text.lower()
-               for key, value in rm_map.items():
-                   if key in text_lower:
-                       exercise_key = value
-                       break
-               
-               if not exercise_key or exercise_key not in RM_DATA:
-                   return text
-               
-               rm = RM_DATA[exercise_key]
-               
-               # 处理连续百分比格式 (70%-70%-75%-75%-80% 1RM)
-               if re.search(r'\d+%-+\d+%', text):
-                   pattern = r'([\d%-]+%\s*1RM)'
-                   match = re.search(pattern, text)
-                   if match:
-                       pct_part = match.group(1).replace('1RM', '').strip()
-                       rest = text[match.end():]
-                       
-                       percentages = pct_part.split('-')
-                       
-                       calculated = []
-                       for pct in percentages:
-                           pct = pct.strip()
-                           if pct.endswith('%'):
-                               pct = pct[:-1]
-                           if pct.replace('.', '').isdigit():
-                               pct_float = float(pct)
-                               weight = round(rm * pct_float / 100 / 2.5) * 2.5
-                               calculated.append(f"{pct}% 1RM ({weight}kg)")
-                       
-                       if calculated:
-                           result = text[:match.start()] + " + ".join(calculated) + rest
-                           return result
-               
-               # 处理逗号分隔的多个百分比 (68%1RM, 70%1RM, 73%1RM, 76%1RM)
-               if re.search(r'\d+%1RM(,\s*\d+%1RM)+', text):
-                   parts = text.split(', ')
-                   processed = []
-                   for part in parts:
-                       pct_match = re.search(r'(\d+)%1RM', part)
-                       if pct_match:
-                           pct = pct_match.group(1)
-                           weight = round(rm * float(pct) / 100 / 2.5) * 2.5
-                           processed.append(f"{pct}% 1RM ({weight}kg)")
-                       else:
-                           processed.append(part)
-                   result = ', '.join(processed)
-                   return result
-               
-               # 处理范围百分比格式 (60-65% 1RM)
-               pattern = r'(\d+)-(\d+)%\s*1RM(.*)'
-               match = re.search(pattern, text)
-               if match:
-                   min_pct = match.group(1)
-                   max_pct = match.group(2)
-                   rest = match.group(3)
-                   
-                   min_weight = round(rm * float(min_pct) / 100 / 2.5) * 2.5
-                   max_weight = round(rm * float(max_pct) / 100 / 2.5) * 2.5
-                   
-                   result = text[:match.start()] + f"{min_pct}-{max_pct}% 1RM ({min_weight}-{max_weight}kg)" + rest
-                   return result
-               
-               # 处理单个百分比格式 (80% 1RM)
-               pattern = r'(\d+)%\s*1RM(.*)'
-               match = re.search(pattern, text)
-               if match:
-                   pct = match.group(1)
-                   rest = match.group(2)
-                   
-                   weight = round(rm * float(pct) / 100 / 2.5) * 2.5
-                   result = text[:match.start()] + f"{pct}% 1RM ({weight}kg)" + rest
-                   return result
-               
-               return text
+          def calculate_weights(text):
+              if not text:
+                  return text
+
+              rm_map = {
+                  'front squat': 'front_squat',
+                  'bench press': 'bench_press',
+                  'clean & jerk': 'clean_jerk',
+                  'power clean & jerk': 'clean_jerk',
+                  'push press': 'push_press',
+                  'snatch': 'snatch',
+                  'power snatch': 'snatch',
+                  'squat clean': 'squat_clean',
+                  'back squat': 'back_squat',
+                  'deadlift': 'deadlift'
+              }
+
+              # 找到对应的动作
+              exercise_key = None
+              text_lower = text.lower()
+              for key, value in rm_map.items():
+                  if key in text_lower:
+                      exercise_key = value
+                      break
+
+              if not exercise_key or exercise_key not in RM_DATA:
+                  return text
+
+              rm = RM_DATA[exercise_key]
+
+              # 处理 @ 范围百分比格式 (@ 80-85%) - 先匹配这个！
+              if re.search(r'@\s*[\d.]+-[\d.]+%', text):
+                  result = text
+                  for match in re.finditer(r'@\s*([\d.]+)-([\d.]+)%', text):
+                      min_pct = match.group(1)
+                      max_pct = match.group(2)
+                      min_weight = round(rm * float(min_pct) / 100 / 2.5) * 2.5
+                      max_weight = round(rm * float(max_pct) / 100 / 2.5) * 2.5
+                      result = result.replace(match.group(0), f"@ {min_pct}-{max_pct}% ({min_weight}-{max_weight}kg)")
+                  return result
+
+              # 处理 @ 单个百分比格式 (@ 82.5%)
+              if re.search(r'@\s*[\d.]+%', text):
+                  result = text
+                  for match in re.finditer(r'@\s*([\d.]+)%', text):
+                      pct = match.group(1)
+                      weight = round(rm * float(pct) / 100 / 2.5) * 2.5
+                      result = result.replace(match.group(0), f"@{pct}% ({weight}kg)")
+                  return result
+
+              # 处理连续百分比格式 (70%-70%-75%-75%-80% 1RM)
+              if re.search(r'\d+%-+\d+%', text):
+                  pattern = r'([\d%-]+%\s*1RM)\s*(?:\([\d.]+\s*kg\))?\s*'
+                  match = re.search(pattern, text)
+                  if match:
+                      pct_part = match.group(1).replace('1RM', '').strip()
+                      rest = text[match.end():]
+
+                      percentages = pct_part.split('-')
+
+                      calculated = []
+                      for pct in percentages:
+                          pct = pct.strip()
+                          if pct.endswith('%'):
+                              pct = pct[:-1]
+                          if pct.replace('.', '').isdigit():
+                              pct_float = float(pct)
+                              weight = round(rm * pct_float / 100 / 2.5) * 2.5
+                              calculated.append(f"{pct}% 1RM ({weight}kg)")
+
+                      if calculated:
+                          result = text[:match.start()] + " + ".join(calculated) + (rest if rest.startswith(' ') or rest == '' else ' ' + rest)
+                          return result
+
+              # 处理逗号分隔的多个百分比 (68%1RM, 70%1RM, 73%1RM, 76%1RM)
+              if re.search(r'\d+%1RM(,\s*\d+%1RM)+', text):
+                  result = text
+                  # 逐个替换每个百分比
+                  for match in re.finditer(r'(\d+)%1RM', text):
+                      pct = match.group(1)
+                      weight = round(rm * float(pct) / 100 / 2.5) * 2.5
+                      result = result.replace(match.group(0), f"{pct}% 1RM ({weight}kg)")
+                  return result
+
+              # 处理范围百分比格式 (60-65% 1RM)
+              pattern = r'(\d+)-(\d+)%\s*1RM\s*(?:\([\d.]+\s*-\s*[\d.]+\s*kg\))?\s*'
+              match = re.search(pattern, text)
+              if match:
+                  min_pct = match.group(1)
+                  max_pct = match.group(2)
+                  rest = text[match.end():]
+
+                  min_weight = round(rm * float(min_pct) / 100 / 2.5) * 2.5
+                  max_weight = round(rm * float(max_pct) / 100 / 2.5) * 2.5
+
+                  result = text[:match.start()] + f"{min_pct}-{max_pct}% 1RM ({min_weight}-{max_weight}kg)" + (rest if rest.startswith(' ') or rest == '' else ' ' + rest)
+                  return result
+
+              # 处理单个百分比格式 (80% 1RM)
+              pattern = r'(\d+)%\s*1RM\s*(?:\([\d.]+\s*kg\))?\s*'
+              match = re.search(pattern, text)
+              if match:
+                  pct = match.group(1)
+                  rest = text[match.end():]
+
+                  weight = round(rm * float(pct) / 100 / 2.5) * 2.5
+                  result = text[:match.start()] + f"{pct}% 1RM ({weight}kg)" + (rest if rest.startswith(' ') or rest == '' else ' ' + rest)
+                  return result
+
+              return text
 
           # 处理场馆计划中的1RM百分比
           if gym_plan:
@@ -317,7 +332,7 @@ jobs:
                           latest = rows[-1]
                           if len(latest) >= 8:
                               physical_recovery = int(latest[7])
-                              
+
                               lines_msg.append("### 📊 健康状态调整")
                               if physical_recovery < 50:
                                   lines_msg.append("⚠️ 体力恢复不足，建议降低强度20-30%")
