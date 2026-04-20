@@ -81,7 +81,7 @@ jobs:
           content = None
           
           # 1. 先尝试本地查找
-          weekly_dir = "memory/fitness/weekly"
+          weekly_dir = "memory/personal/fitness/weekly"
           if os.path.exists(weekly_dir):
               try:
                   files = os.listdir(weekly_dir)
@@ -105,7 +105,7 @@ jobs:
           # 3. 如果本地没有找到或读取失败，从Gitee查找
           if not content:
               # 先列出目录内容
-              dir_url = f"https://gitee.com/api/v5/repos/shws2011/dimi/contents/memory/fitness/weekly"
+              dir_url = f"https://gitee.com/api/v5/repos/shws2011/dimi/contents/memory/personal/fitness/weekly"
               params = {"access_token": token, "ref": "main"}
               
               try:
@@ -115,7 +115,7 @@ jobs:
                       if isinstance(dir_contents, list):
                           for item in dir_contents:
                               if item.get("type") == "file" and item.get("name", "").startswith(file_prefix) and item.get("name", "").endswith('.md'):
-                                  file_path = f"memory/fitness/weekly/{item.get('name')}"
+                                  file_path = f"memory/personal/fitness/weekly/{item.get('name')}"
                                   break
               except Exception as e:
                   print(f"⚠️ 列出Gitee目录异常: {e}")
@@ -141,7 +141,7 @@ jobs:
                       sys.exit(1)
               else:
                   # 如果找不到任何文件，尝试精确匹配
-                  file_path = f"memory/fitness/weekly/{file_prefix}.md"
+                  file_path = f"memory/personal/fitness/weekly/{file_prefix}.md"
                   url = f"https://gitee.com/api/v5/repos/shws2011/dimi/contents/{file_path}"
                   try:
                       response = requests.get(url, params=params, timeout=10)
@@ -383,7 +383,7 @@ jobs:
           # 添加健康状态调整
           try:
               import csv
-              health_data_path = "memory/fitness/health_data.csv"
+              health_data_path = "memory/personal/fitness/health_data.csv"
               if os.path.exists(health_data_path):
                   with open(health_data_path, 'r', encoding='utf-8-sig') as f:
                       reader = csv.reader(f)
