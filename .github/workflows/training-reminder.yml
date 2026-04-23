@@ -245,14 +245,23 @@ jobs:
               rm_map = {
                   'front squat': 'front_squat',
                   'bench press': 'bench_press',
-                  'clean & jerk': 'clean_jerk',
-                  'power clean & jerk': 'clean_jerk',
-                  'push press': 'push_press',
-                  'snatch': 'snatch',
-                  'power snatch': 'snatch',
-                  'squat clean': 'squat_clean',
                   'back squat': 'back_squat',
-                  'deadlift': 'deadlift'
+                  'deadlift': 'deadlift',
+                  'push press': 'push_press',
+                  'clean & jerk': 'clean_jerk',
+                  'power clean & jerk': 'clean_jerk',     
+                  'split jerk': 'clean_jerk',                  
+                  'squat clean': 'squat_clean',                  
+                  'clean': 'clean',
+                  'power clean': 'clean',
+                  'hang clean': 'clean',
+                  'clean pull': 'clean',
+                  'snatch': 'snatch',
+                  'power snatch': 'snatch',                  
+                  'hang snatch': 'snatch',
+                  'snatch pull': 'snatch',
+                  'muscle snatch': 'snatch',
+                  'snatch balance': 'snatch'
               }
 
               # 找到对应的动作
