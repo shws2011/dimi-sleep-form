@@ -43,10 +43,10 @@ jobs:
           RM_DATA = {
               "front_squat": 90,
               "bench_press": 80,
+              "clean": 70,
               "clean_jerk": 50,
               "push_press": 55,
               "snatch": 50,
-              "squat_clean": 70,
               "back_squat": 110,
               "deadlift": 120
           }
@@ -162,17 +162,17 @@ jobs:
 
           # 解析今日计划
           weekdays_mapping = {
-    "Monday": "周一",
-    "Tuesday": "周二", 
-    "Wednesday": "周三",
-    "Thursday": "周四",
-    "Friday": "周五",
-    "Saturday": "周六",
-    "Sunday": "周日"
-}
-english_weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-target_weekday_en = english_weekdays[today.weekday()]
-target_weekday_cn = weekdays_mapping[target_weekday_en]
+              "Monday": "周一",
+              "Tuesday": "周二", 
+              "Wednesday": "周三",
+              "Thursday": "周四",
+              "Friday": "周五",
+              "Saturday": "周六",
+              "Sunday": "周日"
+          }
+          english_weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+          target_weekday_en = english_weekdays[today.weekday()]
+          target_weekday_cn = weekdays_mapping[target_weekday_en]
           print(f"✓ 今日: {target_weekday_cn}")
 
           lines = content.split('\n')
@@ -259,9 +259,10 @@ target_weekday_cn = weekdays_mapping[target_weekday_en]
                   'deadlift': 'deadlift',
                   'push press': 'push_press',
                   'clean & jerk': 'clean_jerk',
+                  'clean and jerk': 'clean_jerk',
                   'power clean & jerk': 'clean_jerk',     
                   'split jerk': 'clean_jerk',                  
-                  'squat clean': 'squat_clean',                  
+                  'squat clean': 'clean',                  
                   'clean': 'clean',
                   'power clean': 'clean',
                   'hang clean': 'clean',
