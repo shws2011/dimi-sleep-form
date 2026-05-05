@@ -161,8 +161,18 @@ jobs:
                       sys.exit(1)
 
           # 解析今日计划
-          chinese_weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
-          target_weekday_cn = chinese_weekdays[today.weekday()]
+          weekdays_mapping = {
+    "Monday": "周一",
+    "Tuesday": "周二", 
+    "Wednesday": "周三",
+    "Thursday": "周四",
+    "Friday": "周五",
+    "Saturday": "周六",
+    "Sunday": "周日"
+}
+english_weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+target_weekday_en = english_weekdays[today.weekday()]
+target_weekday_cn = weekdays_mapping[target_weekday_en]
           print(f"✓ 今日: {target_weekday_cn}")
 
           lines = content.split('\n')
@@ -175,7 +185,7 @@ jobs:
                   in_target_section = True
                   continue
 
-              if in_target_section and line_stripped.startswith('## ') and target_weekday_cn not in line_stripped:
+              if (target_weekday_cn in line_stripped or target_weekday_en in line_stripped) and line_stripped.startswith('## '):
                   break
 
               if in_target_section:
