@@ -216,15 +216,25 @@ jobs:
           plan_text = '\n'.join(daily_content)
           print(f"✓ 提取到计划内容: {len(plan_text)}字符")
 
-          # 提取各部分
-          def extract_section(title, text):
+          # 提取各部分 - 支持中英文标题
+          def extract_section(titles, text):
               lines = text.split('\n')
               section_lines = []
               in_section = False
 
               for line in lines:
                   line_stripped = line.strip()
-                  if f"### {title}" in line_stripped:
+                  # 检查是否匹配任一标题
+                  matched = False
+                  if isinstance(titles, list):
+                      for title in titles:
+                          if f"### {title}" in line_stripped:
+                              matched = True
+                              break
+                  else:
+                      matched = f"### {titles}" in line_stripped
+                  
+                  if matched:
                       in_section = True
                       continue
 
@@ -236,10 +246,10 @@ jobs:
 
               return '\n'.join(section_lines).strip()
 
-          gym_plan = extract_section("场馆计划", plan_text)
-          extra_plan = extract_section("课后加练", plan_text)
-          recovery_plan = extract_section("恢复重点", plan_text)
-          notes_plan = extract_section("练习要点", plan_text)
+          gym_plan = extract_section(["场馆计划", "Venue Plan"], plan_text)
+          extra_plan = extract_section(["课后加练", "Post-Training Supplementary"], plan_text)
+          recovery_plan = extract_section(["恢复重点", "Recovery Focus"], plan_text)
+          notes_plan = extract_section(["练习要点", "Notes"], plan_text)
 
           print(f"✓ 解析成功: 场馆计划({len(gym_plan)}字符), 课后加练({len(extra_plan)}字符), 恢复重点({len(recovery_plan)}字符)")
 
